@@ -1,0 +1,802 @@
+{
+  "daiDoi": [
+    {
+      "id": "1",
+      "nameDaiDoi": "Đại đội 1",
+      "idTieuDoan": 1
+    }
+  ],
+  "majors": [
+    {
+      "name": "Y sĩ",
+      "shortName": "Y55",
+      "id": "1"
+    },
+    {
+      "name": "Nhân viên nấu ăn",
+      "shortName": "KCL2",
+      "id": "2"
+    },
+    {
+      "name": "Tài chính",
+      "shortName": "K2",
+      "id": "3"
+    }
+  ],
+  "classes": [
+    {
+      "id": "1",
+      "majorId": "1",
+      "name": "A1"
+    },
+    {
+      "id": "2",
+      "majorId": "1",
+      "name": "A2"
+    },
+    {
+      "id": "3",
+      "majorId": "2",
+      "name": "KCL2"
+    },
+    {
+      "id": "VBSCSccsBGA",
+      "majorId": "3",
+      "name": "K3"
+    },
+    {
+      "majorId": "3",
+      "name": "AS",
+      "id": "G7BiAmgWDk8"
+    },
+    {
+      "majorId": "3",
+      "name": "dfsa",
+      "id": "E34aypKbCHY"
+    }
+  ],
+  "students": [
+    {
+      "id": "123afsdf",
+      "maSoHV": "2511080001",
+      "name": "Tạ Đặng Hồng Anh",
+      "majorId": "2",
+      "classId": "3",
+      "donVi": "Đại đội 3",
+      "chucVu": "Học viên",
+      "danToc": "Kinh",
+      "birthDay": "2003-10-31",
+      "capBac": "Binh nhì"
+    },
+    {
+      "id": "U7-nDbrX4Ow",
+      "maSoHV": "74454546",
+      "name": "sdfad",
+      "majorId": "2",
+      "classId": "3",
+      "donVi": "Đại đội 3",
+      "chucVu": "Học viên",
+      "danToc": "Kinh",
+      "birthDay": "2003-11-10",
+      "capBac": "Binh nhì"
+    },
+    {
+      "id": "gsdi9WFvfdU",
+      "maSoHV": "23131231231",
+      "name": "đầ",
+      "majorId": "2",
+      "classId": "3",
+      "donVi": "Đại đội 3",
+      "chucVu": "Học viên",
+      "danToc": "Mùng",
+      "birthDay": "2003-02-01",
+      "capBac": "Binh nhì"
+    },
+    {
+      "id": "GupKv3eUq6U",
+      "maSoHV": "312312313123",
+      "name": "dsfasdf",
+      "majorId": "2",
+      "classId": "3",
+      "donVi": "Đại đội 3",
+      "chucVu": "Học viên",
+      "danToc": "Kinh",
+      "birthDay": "2003-11-10",
+      "capBac": "Binh nhì"
+    },
+    {
+      "id": "2GRuy58t1AQ",
+      "maSoHV": "31231232123122",
+      "name": "dfsadadas",
+      "majorId": "2",
+      "classId": "3",
+      "donVi": "Đại đội 3",
+      "chucVu": "Học viên",
+      "danToc": "Mường",
+      "birthDay": "2003-01-10",
+      "capBac": "Binh nhì"
+    }
+  ],
+  "ranks": [
+    {
+      "id": "rank-01",
+      "name": "Binh nhì",
+      "group": "Hạ sĩ quan, binh sĩ",
+      "rankOrder": 1
+    },
+    {
+      "id": "rank-02",
+      "name": "Binh nhất",
+      "group": "Hạ sĩ quan, binh sĩ",
+      "rankOrder": 2
+    },
+    {
+      "id": "rank-03",
+      "name": "Hạ sỹ",
+      "group": "Hạ sĩ quan, binh sĩ",
+      "rankOrder": 3
+    },
+    {
+      "id": "rank-04",
+      "name": "Trung sỹ",
+      "group": "Hạ sĩ quan, binh sĩ",
+      "rankOrder": 4
+    },
+    {
+      "id": "rank-05",
+      "name": "Thượng sỹ",
+      "group": "Hạ sĩ quan, binh sĩ",
+      "rankOrder": 5
+    },
+    {
+      "id": "rank-06",
+      "name": "Thiếu úy",
+      "group": "Sĩ quan, Quân nhân chuyên nghiệp",
+      "rankOrder": 6
+    },
+    {
+      "id": "rank-07",
+      "name": "Trung úy",
+      "group": "Sĩ quan, Quân nhân chuyên nghiệp",
+      "rankOrder": 7
+    },
+    {
+      "id": "rank-08",
+      "name": "Thượng úy",
+      "group": "Sĩ quan, Quân nhân chuyên nghiệp",
+      "rankOrder": 8
+    },
+    {
+      "id": "rank-09",
+      "name": "Đại úy",
+      "group": "Sĩ quan, Quân nhân chuyên nghiệp",
+      "rankOrder": 9
+    },
+    {
+      "id": "rank-10",
+      "name": "Thiếu tá",
+      "group": "Sĩ quan, Quân nhân chuyên nghiệp",
+      "rankOrder": 10
+    },
+    {
+      "id": "rank-11",
+      "name": "Trung tá",
+      "group": "Sĩ quan, Quân nhân chuyên nghiệp",
+      "rankOrder": 11
+    },
+    {
+      "id": "rank-12",
+      "name": "Thượng tá",
+      "group": "Sĩ quan, Quân nhân chuyên nghiệp",
+      "rankOrder": 12
+    },
+    {
+      "id": "rank-13",
+      "name": "Đại tá",
+      "group": "Sĩ quan, Quân nhân chuyên nghiệp",
+      "rankOrder": 13
+    }
+  ],
+  "rankRequests": [
+    {
+      "id": "kWSjJVerNqA",
+      "studentId": "123afsdf",
+      "studentName": "Tạ Đặng Hồng Anh",
+      "maSoHV": "2511080001",
+      "category": "HSQ, binh sĩ",
+      "currentRank": "Trung sỹ",
+      "proposedRank": "Thượng sỹ",
+      "reason": "ĐÚng",
+      "submittedAt": "2026-09-25T08:58:43.433Z",
+      "status": "approved",
+      "reviewerNote": "fasdf",
+      "reviewedAt": "2026-09-25T08:58:56.072Z"
+    },
+    {
+      "id": "mvbbIEmeVro",
+      "studentId": "U7-nDbrX4Ow",
+      "studentName": "sdfad",
+      "maSoHV": "74454546",
+      "category": "Học viên",
+      "currentRank": "Binh nhất",
+      "proposedRank": "Hạ sỹ",
+      "reason": "asdf",
+      "submittedAt": "2026-09-25T09:06:33.069Z",
+      "status": "approved",
+      "reviewerNote": "",
+      "reviewedAt": "2026-09-25T09:07:09.844Z"
+    },
+    {
+      "id": "B9Wa6OkOEjU",
+      "studentId": "GupKv3eUq6U",
+      "studentName": "dsfasdf",
+      "maSoHV": "312312313123",
+      "category": "Học viên",
+      "currentRank": "Trung sỹ",
+      "proposedRank": "Thượng sỹ",
+      "reason": "dasdasa",
+      "submittedAt": "2026-09-25T09:06:40.653Z",
+      "status": "approved",
+      "reviewerNote": "",
+      "reviewedAt": "2026-09-25T09:07:11.924Z"
+    },
+    {
+      "id": "PSTTTc15vLU",
+      "studentId": "U7-nDbrX4Ow",
+      "studentName": "sdfad",
+      "maSoHV": "74454546",
+      "category": "HSQ, binh sĩ",
+      "currentRank": "Hạ sỹ",
+      "proposedRank": "Trung sỹ",
+      "reason": "sad",
+      "submittedAt": "2026-09-25T09:10:02.394Z",
+      "status": "approved",
+      "reviewedAt": "2026-09-25T09:15:30.049Z"
+    },
+    {
+      "id": "0ReCZCJPYpo",
+      "studentId": "gsdi9WFvfdU",
+      "studentName": "đầ",
+      "maSoHV": "23131231231",
+      "category": "HSQ, binh sĩ",
+      "currentRank": "Binh nhất",
+      "proposedRank": "Hạ sỹ",
+      "reason": "sadad",
+      "submittedAt": "2026-09-25T09:10:08.977Z",
+      "status": "approved",
+      "reviewedAt": "2026-09-25T09:15:30.050Z"
+    },
+    {
+      "id": "wyCeD0DAOL0",
+      "studentId": "2GRuy58t1AQ",
+      "studentName": "dfsadadas",
+      "maSoHV": "31231232123122",
+      "category": "HSQ, binh sĩ",
+      "currentRank": "Binh nhất",
+      "proposedRank": "Hạ sỹ",
+      "reason": "sadsada",
+      "submittedAt": "2026-09-25T09:10:14.513Z",
+      "status": "approved",
+      "reviewedAt": "2026-09-25T09:15:30.050Z"
+    }
+  ],
+  "quanKhu": [
+    {
+      "id": "qk_btl_hanoi",
+      "nameQuanKhu": "Bộ Tư lệnh Thủ đô Hà Nội",
+      "code": "BTL_HANOI",
+      "description": "Tương đương cấp Quân khu, bảo vệ Thủ đô Hà Nội"
+    },
+    {
+      "id": "qk_1",
+      "nameQuanKhu": "Quân khu 1",
+      "code": "QK1",
+      "description": "Quân khu Đông Bắc"
+    },
+    {
+      "id": "qk_2",
+      "nameQuanKhu": "Quân khu 2",
+      "code": "QK2",
+      "description": "Quân khu Tây Bắc"
+    },
+    {
+      "id": "qk_3",
+      "nameQuanKhu": "Quân khu 3",
+      "code": "QK3",
+      "description": "Quân khu Hồng Hà"
+    },
+    {
+      "id": "qk_4",
+      "nameQuanKhu": "Quân khu 4",
+      "code": "QK4",
+      "description": "Quân khu Bắc Trung Bộ"
+    },
+    {
+      "id": "qk_5",
+      "nameQuanKhu": "Quân khu 5",
+      "code": "QK5",
+      "description": "Quân khu Nam Trung Bộ & Tây Nguyên"
+    },
+    {
+      "id": "qk_7",
+      "nameQuanKhu": "Quân khu 7",
+      "code": "QK7",
+      "description": "Quân khu Đông Nam Bộ"
+    },
+    {
+      "id": "qk_9",
+      "nameQuanKhu": "Quân khu 9",
+      "code": "QK9",
+      "description": "Quân khu Tây Nam Bộ"
+    },
+    {
+      "id": "qd_12",
+      "nameQuanKhu": "Quân đoàn 12",
+      "code": "QD12",
+      "description": "Quân đoàn chủ lực cơ động chiến lược (Sáp nhập QĐ1 & QĐ2)"
+    },
+    {
+      "id": "qd_3",
+      "nameQuanKhu": "Quân đoàn 3",
+      "code": "QD3",
+      "description": "Quân đoàn chủ lực Tây Nguyên"
+    },
+    {
+      "id": "qd_4",
+      "nameQuanKhu": "Quân đoàn 4",
+      "code": "QD4",
+      "description": "Quân đoàn chủ lực Miền Đông"
+    },
+    {
+      "id": "qc_pkkq",
+      "nameQuanKhu": "Quân chủng Phòng không - Không quân",
+      "code": "QC_PKKQ",
+      "description": "Quản lý & bảo vệ vùng trời quốc gia"
+    },
+    {
+      "id": "qc_hq",
+      "nameQuanKhu": "Quân chủng Hải quân",
+      "code": "QC_HQ",
+      "description": "Quản lý & bảo vệ vùng biển đảo quốc gia"
+    },
+    {
+      "id": "btl_csb",
+      "nameQuanKhu": "Bộ Tư lệnh Cảnh sát biển",
+      "code": "BTL_CSB",
+      "description": "Lực lượng thực thi pháp luật trên biển"
+    },
+    {
+      "id": "btl_bc",
+      "nameQuanKhu": "Các Binh chủng Chuyên ngành BQP",
+      "code": "BINH_CHUNG",
+      "description": "Đặc công, Công binh, Thông tin, Pháo binh, Tăng-Thiết giáp, Hóa học"
+    }
+  ],
+  "suDoan": [
+    {
+      "id": "sd_301",
+      "nameSuDoan": "Sư đoàn 301",
+      "idQuanKhu": "qk_btl_hanoi",
+      "type": "Bộ binh",
+      "description": "Bảo vệ Thủ đô Hà Nội"
+    },
+    {
+      "id": "sd_3",
+      "nameSuDoan": "Sư đoàn 3 (Sư đoàn Sao Vàng)",
+      "idQuanKhu": "qk_1",
+      "type": "Bộ binh",
+      "description": "Lạng Sơn / Bắc Giang"
+    },
+    {
+      "id": "sd_346",
+      "nameSuDoan": "Sư đoàn 346 (Sư đoàn Tân Trào)",
+      "idQuanKhu": "qk_1",
+      "type": "Bộ binh",
+      "description": "Thái Nguyên / Cao Bằng"
+    },
+    {
+      "id": "sd_316",
+      "nameSuDoan": "Sư đoàn 316 (Sư đoàn Bông Lau)",
+      "idQuanKhu": "qk_2",
+      "type": "Bộ binh cơ động",
+      "description": "Phú Thọ / Yên Bái"
+    },
+    {
+      "id": "sd_355",
+      "nameSuDoan": "Sư đoàn 355",
+      "idQuanKhu": "qk_2",
+      "type": "Khung thường trực",
+      "description": "Huấn luyện DBĐV Yên Bái"
+    },
+    {
+      "id": "sd_395",
+      "nameSuDoan": "Sư đoàn 395 (Sư đoàn Yên Tử)",
+      "idQuanKhu": "qk_3",
+      "type": "Bộ binh",
+      "description": "Quảng Ninh"
+    },
+    {
+      "id": "sd_350",
+      "nameSuDoan": "Sư đoàn 350",
+      "idQuanKhu": "qk_3",
+      "type": "Khung thường trực",
+      "description": "Huấn luyện DBĐV Hải Phòng"
+    },
+    {
+      "id": "sd_324",
+      "nameSuDoan": "Sư đoàn 324 (Sư đoàn Ngự Bình)",
+      "idQuanKhu": "qk_4",
+      "type": "Bộ binh cơ động",
+      "description": "Nghệ An"
+    },
+    {
+      "id": "sd_968",
+      "nameSuDoan": "Sư đoàn 968 (Sư đoàn Bình Trị Thiên)",
+      "idQuanKhu": "qk_4",
+      "type": "Bộ binh",
+      "description": "Quảng Trị"
+    },
+    {
+      "id": "sd_341",
+      "nameSuDoan": "Sư đoàn 341 (Sư đoàn Sông Lam)",
+      "idQuanKhu": "qk_4",
+      "type": "Khung thường trực",
+      "description": "Thanh Hóa"
+    },
+    {
+      "id": "sd_2",
+      "nameSuDoan": "Sư đoàn 2 (Sư đoàn Quảng Đà)",
+      "idQuanKhu": "qk_5",
+      "type": "Bộ binh cơ động",
+      "description": "Quảng Nam"
+    },
+    {
+      "id": "sd_315",
+      "nameSuDoan": "Sư đoàn 315 (Sư đoàn Tây Nguyên)",
+      "idQuanKhu": "qk_5",
+      "type": "Bộ binh",
+      "description": "Quảng Nam"
+    },
+    {
+      "id": "sd_305",
+      "nameSuDoan": "Sư đoàn 305",
+      "idQuanKhu": "qk_5",
+      "type": "Khung thường trực",
+      "description": "Khánh Hòa"
+    },
+    {
+      "id": "sd_5",
+      "nameSuDoan": "Sư đoàn 5",
+      "idQuanKhu": "qk_7",
+      "type": "Bộ binh",
+      "description": "Tây Ninh"
+    },
+    {
+      "id": "sd_302",
+      "nameSuDoan": "Sư đoàn 302",
+      "idQuanKhu": "qk_7",
+      "type": "Bộ binh",
+      "description": "Đồng Nai"
+    },
+    {
+      "id": "sd_317",
+      "nameSuDoan": "Sư đoàn 317",
+      "idQuanKhu": "qk_7",
+      "type": "Khung thường trực",
+      "description": "TP. Hồ Chí Minh"
+    },
+    {
+      "id": "sd_330",
+      "nameSuDoan": "Sư đoàn 330 (Sư đoàn Cửu Long)",
+      "idQuanKhu": "qk_9",
+      "type": "Bộ binh cơ động",
+      "description": "An Giang"
+    },
+    {
+      "id": "sd_8",
+      "nameSuDoan": "Sư đoàn 8",
+      "idQuanKhu": "qk_9",
+      "type": "Bộ binh",
+      "description": "Tiền Giang"
+    },
+    {
+      "id": "sd_4",
+      "nameSuDoan": "Sư đoàn 4",
+      "idQuanKhu": "qk_9",
+      "type": "Bộ binh",
+      "description": "Kiên Giang"
+    },
+    {
+      "id": "sd_308",
+      "nameSuDoan": "Sư đoàn 308 (Đại đoàn Quân Tiên Phong)",
+      "idQuanKhu": "qd_12",
+      "type": "Bộ binh cơ giới",
+      "description": "Hà Nội / Hòa Bình"
+    },
+    {
+      "id": "sd_312",
+      "nameSuDoan": "Sư đoàn 312 (Sư đoàn Chiến Thắng)",
+      "idQuanKhu": "qd_12",
+      "type": "Bộ binh cơ động",
+      "description": "Thái Nguyên / Hà Nội"
+    },
+    {
+      "id": "sd_325",
+      "nameSuDoan": "Sư đoàn 325 (Sư đoàn Bình Trị Thiên)",
+      "idQuanKhu": "qd_12",
+      "type": "Bộ binh cơ động",
+      "description": "Bắc Giang"
+    },
+    {
+      "id": "sd_304",
+      "nameSuDoan": "Sư đoàn 304 (Sư đoàn Vinh Quang)",
+      "idQuanKhu": "qd_12",
+      "type": "Bộ binh cơ động",
+      "description": "Vĩnh Phúc"
+    },
+    {
+      "id": "sd_10",
+      "nameSuDoan": "Sư đoàn 10 (Sư đoàn Đắk To)",
+      "idQuanKhu": "qd_3",
+      "type": "Bộ binh cơ động",
+      "description": "Kon Tum / Gia Lai"
+    },
+    {
+      "id": "sd_320",
+      "nameSuDoan": "Sư đoàn 320 (Sư đoàn Đồng Bằng)",
+      "idQuanKhu": "qd_3",
+      "type": "Bộ binh cơ động",
+      "description": "Gia Lai"
+    },
+    {
+      "id": "sd_31",
+      "nameSuDoan": "Sư đoàn 31",
+      "idQuanKhu": "qd_3",
+      "type": "Bộ binh",
+      "description": "Bình Định"
+    },
+    {
+      "id": "sd_7",
+      "nameSuDoan": "Sư đoàn 7 (Sư đoàn Miền Đông)",
+      "idQuanKhu": "qd_4",
+      "type": "Bộ binh cơ động",
+      "description": "Bình Dương / Đồng Nai"
+    },
+    {
+      "id": "sd_9",
+      "nameSuDoan": "Sư đoàn 9 (Sư đoàn Đất Thép)",
+      "idQuanKhu": "qd_4",
+      "type": "Bộ binh cơ động",
+      "description": "Bình Dương"
+    },
+    {
+      "id": "sd_309",
+      "nameSuDoan": "Sư đoàn 309 (Sư đoàn Cửu Long)",
+      "idQuanKhu": "qd_4",
+      "type": "Bộ binh cơ động",
+      "description": "Đồng Nai"
+    },
+    {
+      "id": "sd_361",
+      "nameSuDoan": "Sư đoàn 361 (Sư đoàn PK Hà Nội)",
+      "idQuanKhu": "qc_pkkq",
+      "type": "Phòng không",
+      "description": "Hà Nội / Miền Bắc"
+    },
+    {
+      "id": "sd_363",
+      "nameSuDoan": "Sư đoàn 363 (Sư đoàn PK Hải Phòng)",
+      "idQuanKhu": "qc_pkkq",
+      "type": "Phòng không",
+      "description": "Hải Phòng / Duyên hải"
+    },
+    {
+      "id": "sd_365",
+      "nameSuDoan": "Sư đoàn 365 (Sư đoàn PK Bắc Giang)",
+      "idQuanKhu": "qc_pkkq",
+      "type": "Phòng không",
+      "description": "Đông Bắc"
+    },
+    {
+      "id": "sd_375",
+      "nameSuDoan": "Sư đoàn 375 (Sư đoàn PK Đà Nẵng)",
+      "idQuanKhu": "qc_pkkq",
+      "type": "Phòng không",
+      "description": "Miền Trung"
+    },
+    {
+      "id": "sd_377",
+      "nameSuDoan": "Sư đoàn 377 (Sư đoàn PK Cam Ranh)",
+      "idQuanKhu": "qc_pkkq",
+      "type": "Phòng không",
+      "description": "Khánh Hòa / Trường Sa"
+    },
+    {
+      "id": "sd_367",
+      "nameSuDoan": "Sư đoàn 367 (Sư đoàn PK TP.HCM)",
+      "idQuanKhu": "qc_pkkq",
+      "type": "Phòng không",
+      "description": "Đông Nam Bộ"
+    },
+    {
+      "id": "sd_371",
+      "nameSuDoan": "Sư đoàn 371 (Sư đoàn KQ Thăng Long)",
+      "idQuanKhu": "qc_pkkq",
+      "type": "Không quân",
+      "description": "Nội Bài / Thọ Xuân"
+    },
+    {
+      "id": "sd_372",
+      "nameSuDoan": "Sư đoàn 372 (Sư đoàn KQ Hải Vân)",
+      "idQuanKhu": "qc_pkkq",
+      "type": "Không quân",
+      "description": "Đà Nẵng / Phù Cát"
+    },
+    {
+      "id": "sd_370",
+      "nameSuDoan": "Sư đoàn 370",
+      "idQuanKhu": "qc_pkkq",
+      "type": "Không quân",
+      "description": "Tân Sơn Nhất / Biên Hòa / Phan Rang"
+    }
+  ],
+  "luDoan": [
+    {
+      "id": "ld_575_qk1",
+      "nameLuDoan": "Lữ đoàn 575",
+      "idQuanKhu": "qk_1",
+      "type": "Công binh"
+    },
+    {
+      "id": "ld_382_qk1",
+      "nameLuDoan": "Lữ đoàn 382",
+      "idQuanKhu": "qk_1",
+      "type": "Pháo binh"
+    },
+    {
+      "id": "ld_210_qk1",
+      "nameLuDoan": "Lữ đoàn 210",
+      "idQuanKhu": "qk_1",
+      "type": "Phòng không"
+    },
+    {
+      "id": "ld_601_qk1",
+      "nameLuDoan": "Lữ đoàn 601",
+      "idQuanKhu": "qk_1",
+      "type": "Thông tin"
+    },
+    {
+      "id": "ld_409_qk1",
+      "nameLuDoan": "Lữ đoàn 409",
+      "idQuanKhu": "qk_1",
+      "type": "Tăng - Thiết giáp"
+    },
+    {
+      "id": "ld_25_qk7",
+      "nameLuDoan": "Lữ đoàn 25",
+      "idQuanKhu": "qk_7",
+      "type": "Công binh"
+    },
+    {
+      "id": "ld_77_qk7",
+      "nameLuDoan": "Lữ đoàn 77",
+      "idQuanKhu": "qk_7",
+      "type": "Phòng không"
+    },
+    {
+      "id": "ld_23_qk7",
+      "nameLuDoan": "Lữ đoàn 23",
+      "idQuanKhu": "qk_7",
+      "type": "Thông tin"
+    },
+    {
+      "id": "ld_22_qk7",
+      "nameLuDoan": "Lữ đoàn 22",
+      "idQuanKhu": "qk_7",
+      "type": "Tăng - Thiết giáp"
+    },
+    {
+      "id": "ld_75_qk7",
+      "nameLuDoan": "Lữ đoàn 75",
+      "idQuanKhu": "qk_7",
+      "type": "Pháo binh"
+    },
+    {
+      "id": "ld_25_qk9",
+      "nameLuDoan": "Lữ đoàn 25",
+      "idQuanKhu": "qk_9",
+      "type": "Công binh"
+    },
+    {
+      "id": "ld_962_qk9",
+      "nameLuDoan": "Lữ đoàn 962",
+      "idQuanKhu": "qk_9",
+      "type": "Hỗn hợp Thủy bộ"
+    },
+    {
+      "id": "ld_226_qk9",
+      "nameLuDoan": "Lữ đoàn 226",
+      "idQuanKhu": "qk_9",
+      "type": "Phòng không"
+    },
+    {
+      "id": "ld_29_qk9",
+      "nameLuDoan": "Lữ đoàn 29",
+      "idQuanKhu": "qk_9",
+      "type": "Thông tin"
+    },
+    {
+      "id": "ld_6_qk9",
+      "nameLuDoan": "Lữ đoàn 6",
+      "idQuanKhu": "qk_9",
+      "type": "Pháo binh"
+    },
+    {
+      "id": "ld_189_hq",
+      "nameLuDoan": "Lữ đoàn 189",
+      "idQuanKhu": "qc_hq",
+      "type": "Tàu ngầm Kilo 636"
+    },
+    {
+      "id": "ld_162_hq",
+      "nameLuDoan": "Lữ đoàn 162",
+      "idQuanKhu": "qc_hq",
+      "type": "Tàu mặt nước (Vùng 4)"
+    },
+    {
+      "id": "ld_171_hq",
+      "nameLuDoan": "Lữ đoàn 171",
+      "idQuanKhu": "qc_hq",
+      "type": "Tàu mặt nước (Vùng 2)"
+    },
+    {
+      "id": "ld_125_hq",
+      "nameLuDoan": "Lữ đoàn 125",
+      "idQuanKhu": "qc_hq",
+      "type": "Vận tải Hải quân (Tàu Không số)"
+    },
+    {
+      "id": "ld_101_hq",
+      "nameLuDoan": "Lữ đoàn 101",
+      "idQuanKhu": "qc_hq",
+      "type": "Hải quân Đánh bộ (Vùng 4)"
+    },
+    {
+      "id": "ld_147_hq",
+      "nameLuDoan": "Lữ đoàn 147",
+      "idQuanKhu": "qc_hq",
+      "type": "Hải quân Đánh bộ (Vùng 1)"
+    },
+    {
+      "id": "ld_681_hq",
+      "nameLuDoan": "Lữ đoàn 681",
+      "idQuanKhu": "qc_hq",
+      "type": "Tên lửa bờ Bastion-P"
+    },
+    {
+      "id": "ld_954_hq",
+      "nameLuDoan": "Lữ đoàn 954",
+      "idQuanKhu": "qc_hq",
+      "type": "Không quân Hải quân"
+    },
+    {
+      "id": "ld_113_dc",
+      "nameLuDoan": "Lữ đoàn 113",
+      "idQuanKhu": "btl_bc",
+      "type": "Đặc công Bộ"
+    },
+    {
+      "id": "ld_198_dc",
+      "nameLuDoan": "Lữ đoàn 198",
+      "idQuanKhu": "btl_bc",
+      "type": "Đặc công Tây Nguyên"
+    },
+    {
+      "id": "ld_429_dc",
+      "nameLuDoan": "Lữ đoàn 429",
+      "idQuanKhu": "btl_bc",
+      "type": "Đặc công Đông Nam Bộ"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}
