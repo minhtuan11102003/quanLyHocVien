@@ -110,8 +110,8 @@ export default function RankManagementPage() {
         </select>
       </div>
 
-      <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
-        <table className="w-full border-collapse">
+      <div className="max-h-[calc(100vh-230px)] overflow-auto rounded-xl border bg-white shadow-sm">
+        <table className="min-w-[760px] w-full border-collapse">
           <thead className="bg-gray-100">
             <tr>
               <th className="px-5 py-3 text-left">Thứ tự</th>

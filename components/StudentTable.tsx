@@ -12,6 +12,7 @@ type StudentTableProps = {
   nganhDaoTao: NganhDaoTao[];
   classes: ClassItem[];
   quanKhu: QuanKhu[];
+  subUnits: { id: string; name: string; type: string; source: string }[];
 
   selectedIds: string[];
 
@@ -30,6 +31,7 @@ export default function StudentTable({
   nganhDaoTao,
   classes,
   quanKhu,
+  subUnits,
   selectedIds,
   startIndex,
   onSelect,
@@ -43,7 +45,7 @@ export default function StudentTable({
     students.every((student) => selectedIds.includes(student.id));
 
   return (
-    <div className="mx-2 mt-4 w-full min-w-0 overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-md">
+    <div className="mx-2 mt-4 w-full min-w-0 max-h-[calc(100vh-260px)] max-w-full overflow-auto rounded-xl border border-gray-200 bg-white shadow-md">
       <table className="w-full min-w-max border-collapse">
         {/* HEADER */}
 
@@ -72,10 +74,11 @@ export default function StudentTable({
               Tên học viên
             </th>
 
-            <th className="px-6 py-4 text-left text-xl font-bold">Đơn vị</th>
+            <th className="px-6 py-4 text-left text-xl font-bold">Quân khu</th>
+            <th className="px-6 py-4 text-left text-xl font-bold">Đơn vị cũ</th>
 
             <th className="px-6 py-4 text-left text-xl font-bold">Cấp bậc</th>
-            <th className="px-6 py-4 text-left text-xl font-bold">Ngày sinh</th>
+            {/* <th className="px-6 py-4 text-left text-xl font-bold">Ngày sinh</th> */}
 
             <th className="px-6 py-4 text-left text-xl font-bold">Thao tác</th>
           </tr>
@@ -86,14 +89,14 @@ export default function StudentTable({
         <tbody>
           {students.length == 0 ? (
             <tr>
-              <td colSpan={9} className="py-10 text-center text-gray-500">
+              <td colSpan={11} className="py-10 text-center text-gray-500">
                 Không tìm thấy học viên
               </td>
             </tr>
           ) : (
             students.map((student, index) => {
               const nganh = nganhDaoTao.find(
-                (item) => item.id === student.majorId,
+                (item) => String(item.id) === String(student.majorId),
               );
 
               const lop = classes.find(
@@ -139,15 +142,30 @@ export default function StudentTable({
 
                   <td className="px-6 py-4">{student.name}</td>
 
-                  {/* ĐƠN VỊ */}
-
-                  <td className="px-6 py-4">{student.donVi}</td>
+                  {/* ĐƠN VỊ GỐC */}
+                  <td className="px-6 py-4">
+                    {quanKhu.find(
+                      (x) =>
+                        x.id === student.originQuanKhuId ||
+                        x.id === student.quanKhuId,
+                    )?.nameQuanKhu ?? "Chưa cập nhật"}
+                  </td>
+                  <td className="px-6 py-4">
+                    {(() => {
+                      const id =
+                        student.originDonViCap2Id || student.donViCap2Id;
+                      const unit = subUnits.find(
+                        (x) => `${x.source}:${x.id}` === id || x.id === id,
+                      );
+                      return unit ? `${unit.type} ${unit.name}` : student.donVi;
+                    })()}
+                  </td>
 
                   {/* CHỨC VỤ */}
                   <td className="px-6 py-4">{student.capBac}</td>
-                  <td className="px-6 py-4">
+                  {/* <td className="px-6 py-4">
                     {new Date(student.birthDay).toLocaleDateString("vi-VN")}
-                  </td>
+                  </td> */}
 
                   {/* THAO TÁC */}
 

@@ -152,7 +152,7 @@ export default function EditManyStudent({
   // ==========================================
 
   const filteredClasses = classes.filter(
-    (item) => item.majorId === selectedMajor,
+    (item) => String(item.majorId) === String(selectedMajor),
   );
 
   // ==========================================
@@ -255,12 +255,14 @@ export default function EditManyStudent({
 
           <div className="max-h-[200px] overflow-y-auto">
             {selectedStudents.map((student) => {
-              const major = majors.find((item) => item.id === student.majorId);
+              const major = majors.find(
+                (item) => String(item.id) === String(student.majorId),
+              );
 
               const classItem = classes.find(
                 (item) =>
-                  item.id === student.classId &&
-                  item.majorId === student.majorId,
+                  String(item.id) === String(student.classId) &&
+                  String(item.majorId) === String(student.majorId),
               );
 
               return (

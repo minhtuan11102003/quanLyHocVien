@@ -41,6 +41,7 @@ export default function Home() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
 
   const [quanKhu, setQuankhu] = useState<QuanKhu[]>([]);
+  const [subUnits, setSubUnits] = useState<{ id: string; name: string; type: string; source: string }[]>([]);
 
   // =====================================================
   // STATE SELECT
@@ -76,11 +77,13 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [studentRes, nganhRes, classRes, quanKhuRes] = await Promise.all([
+      const [studentRes, nganhRes, classRes, quanKhuRes, suDoanRes, luDoanRes] = await Promise.all([
         fetch("http://localhost:3001/students"),
         fetch("http://localhost:3001/majors"),
         fetch("http://localhost:3001/classes"),
         fetch("http://localhost:3001/quanKhu"),
+        fetch("http://localhost:3001/suDoan"),
+        fetch("http://localhost:3001/luDoan"),
       ]);
 
       if (!studentRes.ok || !nganhRes.ok || !classRes.ok) {
@@ -93,7 +96,10 @@ export default function Home() {
 
       const classData = await classRes.json();
       const quanKhuData = await quanKhuRes.json();
+      const suDoanData = await suDoanRes.json();
+      const luDoanData = await luDoanRes.json();
       setQuankhu(quanKhuData);
+      setSubUnits([...suDoanData.map((x: any) => ({ id: x.id, name: x.nameSuDoan, type: "Sư đoàn", source: "suDoan" })), ...luDoanData.map((x: any) => ({ id: x.id, name: x.nameLuDoan, type: "Lữ đoàn", source: "luDoan" }))]);
 
       setStudents(studentData);
 
@@ -124,6 +130,7 @@ export default function Home() {
   // =====================================================
 
   const filteredStudents = students.filter((student) => {
+    if (student.graduationStatus === "graduated") return false;
     const keyword = search.toLowerCase().trim();
 
     // Tìm kiếm theo tên hoặc mã số
@@ -138,7 +145,7 @@ export default function Home() {
 
     // Lọc theo lớp
     const matchClass =
-      selectedClassId == "all" || student.classId === selectedClassId;
+      selectedClassId === "all" || String(student.classId) === String(selectedClassId);
 
     return matchSearch && matchDonVi && matchClass;
   });
@@ -425,6 +432,7 @@ export default function Home() {
         nganhDaoTao={nganhDaoTao}
         classes={classes}
         quanKhu={quanKhu}
+        subUnits={subUnits}
         selectedIds={selectedIds}
         startIndex={startIndex}
         onSelect={handleSelect}
@@ -438,7 +446,7 @@ export default function Home() {
           PAGINATION
       ================================================= */}
 
-      <div className="mx-2 mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md">
+      <div className="mx-2 mt-2 w-full overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-md">
         <StudentPagination
           currentPage={currentPage}
           totalPages={totalPages}
@@ -462,6 +470,7 @@ export default function Home() {
               student={detailStudent}
               majors={nganhDaoTao}
               classes={classes}
+              quanKhu={quanKhu}
               onClose={() => setDetailStudent(null)}
             />
           </div>

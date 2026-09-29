@@ -15,6 +15,8 @@ type Major = {
 export default function AddClassComponent({ onClose }: AddClassProps) {
   const [name, setName] = useState("");
   const [majorId, setMajorId] = useState("");
+  const [daiDoiId, setDaiDoiId] = useState("");
+  const [daiDoi, setDaiDoi] = useState<{id:string;nameDaiDoi:string}[]>([]);
 
   const [majors, setMajors] = useState<Major[]>([]);
 
@@ -31,6 +33,8 @@ export default function AddClassComponent({ onClose }: AddClassProps) {
         const data = await res.json();
 
         setMajors(data);
+        const unitRes = await fetch("http://localhost:3001/daiDoi");
+        if (unitRes.ok) setDaiDoi(await unitRes.json());
       } catch (error) {
         console.error("Lỗi:", error);
       }
@@ -51,10 +55,8 @@ export default function AddClassComponent({ onClose }: AddClassProps) {
       return;
     }
 
-    if (!majorId) {
-      alert("Vui lòng chọn ngành đào tạo");
-      return;
-    }
+    if (!majorId) { alert("Vui lòng chọn ngành đào tạo"); return; }
+    if (!daiDoiId) { alert("Vui lòng chọn đại đội quản lý"); return; }
 
     try {
       const classRes = await fetch("http://localhost:3001/classes");
@@ -67,10 +69,7 @@ export default function AddClassComponent({ onClose }: AddClassProps) {
       // TẠO CLASS MỚI`
       // =========================
 
-      const newClass = {
-        majorId,
-        name: name.trim(),
-      };
+      const newClass = { majorId, name: name.trim(), daiDoiId };
 
       const res = await fetch("http://localhost:3001/classes", {
         method: "POST",
@@ -118,6 +117,8 @@ export default function AddClassComponent({ onClose }: AddClassProps) {
           ))}
         </select>
       </div>
+
+      <div><label className="mb-2 block font-medium">Đại đội quản lý</label><select value={daiDoiId} onChange={(e)=>setDaiDoiId(e.target.value)} className="w-full rounded-lg border px-4 py-3"><option value="">-- Chọn đại đội --</option>{daiDoi.map(x=><option key={x.id} value={x.id}>{x.nameDaiDoi}</option>)}</select></div>
 
       {/* =========================
           TÊN LỚP

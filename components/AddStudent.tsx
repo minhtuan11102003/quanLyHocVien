@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 type Major = {
-  majorId: string;
+  id: string;
   name: string;
   shortName: string;
 };
@@ -33,6 +33,9 @@ type FormData = {
   birthDay: string;
   capBac: string;
   quanKhuId: string;
+  donViCap2Id: string;
+  tieuDoanId: string;
+  daiDoiId: string;
 };
 
 type Rank = { id: string; name: string; rankOrder: number };
@@ -46,6 +49,10 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [ranks, setRanks] = useState<Rank[]>([]);
   const [quanKhu, setQuankhu] = useState<QuanKhu[]>([]);
+  const [subUnits, setSubUnits] = useState<{ id: string; name: string; parentId: string; type: string; source: string }[]>([]);
+  const [tieuDoan, setTieuDoan] = useState<{id:string;nameTieuDoan:string}[]>([]);
+  const [daiDoi, setDaiDoi] = useState<{id:string;nameDaiDoi:string;idTieuDoan:string}[]>([]);
+  const [chucVuList, setChucVuList] = useState<{id:string;name:string}[]>([]);
 
   const [form, setForm] = useState<FormData>({
     maSoHV: "",
@@ -58,16 +65,24 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
     birthDay: "",
     capBac: "",
     quanKhuId: "",
+    donViCap2Id: "",
+    tieuDoanId: "",
+    daiDoiId: "",
   });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [majorRes, classRes, rankRes, quanKhuRes] = await Promise.all([
+        const [majorRes, classRes, rankRes, quanKhuRes, suDoanRes, luDoanRes, tdRes, ddRes, cvRes] = await Promise.all([
           fetch("http://localhost:3001/majors"),
           fetch("http://localhost:3001/classes"),
           fetch("http://localhost:3001/ranks"),
           fetch("http://localhost:3001/quanKhu"),
+          fetch("http://localhost:3001/suDoan"),
+          fetch("http://localhost:3001/luDoan"),
+          fetch("http://localhost:3001/tieuDoan"),
+          fetch("http://localhost:3001/daiDoi"),
+          fetch("http://localhost:3001/chucVu"),
         ]);
 
         if (!majorRes.ok || !classRes.ok || !rankRes.ok) {
@@ -78,7 +93,18 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
         const classData = await classRes.json();
         const rankData = await rankRes.json();
         const quanKhuData = await quanKhuRes.json();
+        const suDoanData = await suDoanRes.json();
+        const luDoanData = await luDoanRes.json();
+        let tdData = tdRes.ok ? await tdRes.json() : [];
+        const ddData = ddRes.ok ? await ddRes.json() : [];
+        const cvData = cvRes.ok ? await cvRes.json() : [];
+        if (!Array.isArray(tdData) || !tdData.length) { const ids = [...new Set((Array.isArray(ddData) ? ddData : []).map((x: any) => String(x.idTieuDoan)))]; tdData = ids.map((id, index) => ({ id, nameTieuDoan: `Tiểu đoàn ${index + 1}` })); }
+        setTieuDoan(Array.isArray(tdData) ? tdData : []); setDaiDoi(Array.isArray(ddData) ? ddData : []); setChucVuList(Array.isArray(cvData) && cvData.length ? cvData : [{id:"default_hoc_vien",name:"Học viên"},{id:"default_lop_truong",name:"Lớp trưởng"}]);
         setQuankhu(quanKhuData);
+        setSubUnits([
+          ...suDoanData.map((x: any) => ({ id: x.id, name: x.nameSuDoan, parentId: x.idQuanKhu, type: "Sư đoàn", source: "suDoan" })),
+          ...luDoanData.map((x: any) => ({ id: x.id, name: x.nameLuDoan, parentId: x.idQuanKhu, type: "Lữ đoàn", source: "luDoan" })),
+        ]);
 
         setMajors(majorData);
         setClasses(classData);
@@ -93,8 +119,11 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
 
   // Lọc lớp theo ngành
   const filteredClasses = classes.filter(
-    (item) => Number(item.majorId) == Number(form.majorId),
+    (item) => String(item.majorId) === String(form.majorId),
   );
+
+  const filteredSubUnits = subUnits.filter((item) => item.parentId === form.quanKhuId);
+  const filteredDaiDoi = daiDoi.filter((item) => String(item.idTieuDoan) === String(form.tieuDoanId));
 
   // Xử lý input
   const handleChange = (
@@ -128,11 +157,13 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
       !form.name ||
       !form.majorId ||
       !form.classId ||
-      !form.donVi ||
+      !form.daiDoiId ||
       !form.chucVu ||
       !form.danToc ||
       !form.birthDay ||
-      !form.capBac
+      !form.capBac ||
+      !form.quanKhuId ||
+      !form.donViCap2Id
     ) {
       alert("Vui lòng nhập đầy đủ thông tin");
       return;
@@ -150,11 +181,17 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
 
         classId: form.classId,
 
-        donVi: form.donVi,
+        donVi: daiDoi.find((x) => x.id === form.daiDoiId)?.nameDaiDoi || "",
         chucVu: form.chucVu,
         danToc: form.danToc,
         birthDay: form.birthDay,
         capBac: form.capBac,
+        quanKhuId: form.quanKhuId,
+        donViCap2Id: form.donViCap2Id,
+        tieuDoanId: form.tieuDoanId,
+        daiDoiId: form.daiDoiId,
+        originQuanKhuId: form.quanKhuId,
+        originDonViCap2Id: form.donViCap2Id,
       };
 
       const res = await fetch("http://localhost:3001/students", {
@@ -223,7 +260,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
           <option value="">-- Chọn ngành đào tạo --</option>
 
           {majors.map((major) => (
-            <option value={major.majorId}>{major.name}</option>
+            <option key={major.id} value={major.id}>{major.name}</option>
           ))}
         </select>
       </div>
@@ -254,44 +291,22 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
       </div>
 
       <div>
-        <label className="mb-2 block font-semibold">Chọn Quân Khu</label>
-
-        <select
-          name="quanKhuId"
-          value={form.quanKhuId}
-          // onChange={handleMajorChange}
-          className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
-        >
+        <label className="mb-2 block font-semibold">Quân khu</label>
+        <select name="quanKhuId" value={form.quanKhuId} onChange={(e) => setForm((prev) => ({ ...prev, quanKhuId: e.target.value, donViCap2Id: "" }))} className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500">
           <option value="">-- Chọn quân khu --</option>
-
-          {quanKhu.map((item) => (
-            <option value={item.id}>{item.nameQuanKhu}</option>
-          ))}
+          {quanKhu.map((item) => <option key={item.id} value={item.id}>{item.nameQuanKhu}</option>)}
         </select>
       </div>
-      {/* Đơn vị */}
       <div>
-        <label className="mb-2 block font-semibold">Đơn vị</label>
-
-        <select
-          name="donVi"
-          value={form.donVi}
-          onChange={handleChange}
-          className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
-        >
-          <option value="">-- Chọn đơn vị --</option>
-
-          <option value="Đại đội 1">Đại đội 1</option>
-
-          <option value="Đại đội 2">Đại đội 2</option>
-
-          <option value="Đại đội 3">Đại đội 3</option>
-
-          <option value="Đại đội 4">Đại đội 4</option>
-
-          <option value="Đại đội 5">Đại đội 5</option>
+        <label className="mb-2 block font-semibold">Sư đoàn/Lữ đoàn</label>
+        <select name="donViCap2Id" value={form.donViCap2Id} onChange={handleChange} disabled={!form.quanKhuId} className="w-full rounded-lg border px-4 py-3 outline-none disabled:bg-gray-100 focus:border-blue-500">
+          <option value="">{form.quanKhuId ? "-- Chọn đơn vị --" : "-- Chọn quân khu trước --"}</option>
+          {filteredSubUnits.map((item) => <option key={`${item.source}:${item.id}`} value={`${item.source}:${item.id}`}>{item.type} {item.name}</option>)}
         </select>
       </div>
+      {/* TIỂU ĐOÀN / ĐẠI ĐỘI */}
+      <div><label className="mb-2 block font-semibold">Tiểu đoàn</label><select value={form.tieuDoanId} onChange={(e) => setForm((p) => ({ ...p, tieuDoanId: e.target.value, daiDoiId: "" }))} className="w-full rounded-lg border px-4 py-3"><option value="">-- Chọn Tiểu đoàn --</option>{tieuDoan.map((x) => <option key={x.id} value={x.id}>{x.nameTieuDoan}</option>)}</select></div>
+      <div><label className="mb-2 block font-semibold">Đại đội quản lý lớp</label><select value={form.daiDoiId} onChange={(e) => setForm((p) => ({ ...p, daiDoiId: e.target.value }))} disabled={!form.tieuDoanId} className="w-full rounded-lg border px-4 py-3 disabled:bg-gray-100"><option value="">{form.tieuDoanId ? "-- Chọn Đại đội --" : "-- Chọn Tiểu đoàn trước --"}</option>{filteredDaiDoi.map((x) => <option key={x.id} value={x.id}>{x.nameDaiDoi}</option>)}</select></div>
       {/* Chức vụ */}
       <div>
         <label className="mb-2 block font-semibold">Chức vụ</label>
@@ -303,14 +318,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
           className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
         >
           <option value="">-- Chọn chức vụ --</option>
-
-          <option value="Học viên">Học viên</option>
-
-          <option value="Lớp trưởng">Lớp trưởng</option>
-
-          <option value="Lớp phó học tập">Lớp phó học tập</option>
-
-          <option value="Lớp phó">Lớp phó</option>
+          {chucVuList.map((x) => <option key={x.id} value={x.name}>{x.name}</option>)}
         </select>
       </div>
 

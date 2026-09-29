@@ -51,12 +51,12 @@ export default function PreviewWord({
         <div className="flex-1 overflow-y-auto p-8">
           {students.map((student, index) => {
             const major = nganhDaoTao.find(
-              (item) => item.id === student.majorId,
+              (item) => String(item.id) === String(student.majorId),
             );
 
             const classItem = classes.find(
               (item) =>
-                item.id == student.classId && item.majorId === student.majorId,
+                String(item.id) === String(student.classId) && String(item.majorId) === String(student.majorId),
             );
 
             return (

@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       const className =
         classes.find(
           (item) =>
-            item.id === student.classId && item.majorId === student.majorId,
+            String(item.id) === String(student.classId) && String(item.majorId) === String(student.majorId),
         )?.name ?? "Không xác định";
 
       return [

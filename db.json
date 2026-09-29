@@ -1,9 +1,39 @@
 {
   "daiDoi": [
     {
-      "id": "1",
+      "id": "dd_1",
       "nameDaiDoi": "Đại đội 1",
-      "idTieuDoan": 1
+      "idTieuDoan": "td_1"
+    },
+    {
+      "id": "dd_2",
+      "nameDaiDoi": "Đại đội 2",
+      "idTieuDoan": "td_1"
+    },
+    {
+      "id": "dd_3",
+      "nameDaiDoi": "Đại đội 3",
+      "idTieuDoan": "td_1"
+    },
+    {
+      "id": "dd_4",
+      "nameDaiDoi": "Đại đội 4",
+      "idTieuDoan": "td_2"
+    },
+    {
+      "id": "dd_5",
+      "nameDaiDoi": "Đại đội 5",
+      "idTieuDoan": "td_2"
+    }
+  ],
+  "tieuDoan": [
+    {
+      "id": "td_1",
+      "nameTieuDoan": "Tiểu đoàn 1"
+    },
+    {
+      "id": "td_2",
+      "nameTieuDoan": "Tiểu đoàn 2"
     }
   ],
   "majors": [
@@ -27,32 +57,38 @@
     {
       "id": "1",
       "majorId": "1",
-      "name": "A1"
+      "name": "A1",
+      "daiDoiId": ""
     },
     {
       "id": "2",
       "majorId": "1",
-      "name": "A2"
+      "name": "A2",
+      "daiDoiId": ""
     },
     {
       "id": "3",
       "majorId": "2",
-      "name": "KCL2"
+      "name": "KCL2",
+      "daiDoiId": "dd_2"
     },
     {
       "id": "VBSCSccsBGA",
       "majorId": "3",
-      "name": "K3"
+      "name": "K3",
+      "daiDoiId": ""
     },
     {
       "majorId": "3",
       "name": "AS",
-      "id": "G7BiAmgWDk8"
+      "id": "G7BiAmgWDk8",
+      "daiDoiId": ""
     },
     {
-      "majorId": "3",
-      "name": "dfsa",
-      "id": "E34aypKbCHY"
+      "majorId": "2",
+      "name": "A5",
+      "id": "CyOW0elrEFY",
+      "daiDoiId": ""
     }
   ],
   "students": [
@@ -66,7 +102,15 @@
       "chucVu": "Học viên",
       "danToc": "Kinh",
       "birthDay": "2003-10-31",
-      "capBac": "Binh nhì"
+      "capBac": "Hạ sỹ",
+      "quanKhuId": "qk_1",
+      "donViCap2Id": "suDoan:sd_346",
+      "originQuanKhuId": "qk_2",
+      "originDonViCap2Id": "suDoan:sd_316",
+      "graduationStatus": "graduated",
+      "graduatedAt": "2026-09-28T14:10:13.011Z",
+      "tieuDoanId": "",
+      "daiDoiId": ""
     },
     {
       "id": "U7-nDbrX4Ow",
@@ -78,7 +122,15 @@
       "chucVu": "Học viên",
       "danToc": "Kinh",
       "birthDay": "2003-11-10",
-      "capBac": "Binh nhì"
+      "capBac": "Binh nhất",
+      "quanKhuId": "qk_btl_hanoi",
+      "donViCap2Id": "suDoan:sd_301",
+      "originQuanKhuId": "qk_btl_hanoi",
+      "originDonViCap2Id": "suDoan:sd_301",
+      "graduationStatus": "graduated",
+      "graduatedAt": "2026-09-28T13:29:12.331Z",
+      "tieuDoanId": "",
+      "daiDoiId": ""
     },
     {
       "id": "gsdi9WFvfdU",
@@ -90,7 +142,15 @@
       "chucVu": "Học viên",
       "danToc": "Mùng",
       "birthDay": "2003-02-01",
-      "capBac": "Binh nhì"
+      "capBac": "Trung sỹ",
+      "quanKhuId": "qk_3",
+      "donViCap2Id": "suDoan:sd_395",
+      "originQuanKhuId": "qk_3",
+      "originDonViCap2Id": "suDoan:sd_395",
+      "graduationStatus": "graduated",
+      "graduatedAt": "2026-09-28T14:10:13.011Z",
+      "tieuDoanId": "",
+      "daiDoiId": ""
     },
     {
       "id": "GupKv3eUq6U",
@@ -102,19 +162,33 @@
       "chucVu": "Học viên",
       "danToc": "Kinh",
       "birthDay": "2003-11-10",
-      "capBac": "Binh nhì"
+      "capBac": "Binh nhất",
+      "quanKhuId": "qd_4",
+      "donViCap2Id": "suDoan:sd_309",
+      "originQuanKhuId": "qd_4",
+      "originDonViCap2Id": "suDoan:sd_309",
+      "graduationStatus": "graduated",
+      "graduatedAt": "2026-09-28T14:10:13.012Z",
+      "tieuDoanId": "",
+      "daiDoiId": ""
     },
     {
-      "id": "2GRuy58t1AQ",
-      "maSoHV": "31231232123122",
-      "name": "dfsadadas",
-      "majorId": "2",
-      "classId": "3",
-      "donVi": "Đại đội 3",
-      "chucVu": "Học viên",
-      "danToc": "Mường",
-      "birthDay": "2003-01-10",
-      "capBac": "Binh nhì"
+      "id": "BHwPVNavX2A",
+      "maSoHV": "5454545",
+      "name": "Nguyễn Xuân minh Tuân",
+      "majorId": "1",
+      "classId": "1",
+      "donVi": "Đại đội 2",
+      "chucVu": "Tiểu đội trưởng ",
+      "danToc": "Kinh",
+      "birthDay": "2003-11-10",
+      "capBac": "Binh nhất",
+      "quanKhuId": "qk_7",
+      "donViCap2Id": "suDoan:sd_302",
+      "tieuDoanId": "td_1",
+      "daiDoiId": "dd_2",
+      "originQuanKhuId": "qk_7",
+      "originDonViCap2Id": "suDoan:sd_302"
     }
   ],
   "ranks": [
@@ -268,7 +342,7 @@
     },
     {
       "id": "wyCeD0DAOL0",
-      "studentId": "2GRuy58t1AQ",
+      "studentId": null,
       "studentName": "dfsadadas",
       "maSoHV": "31231232123122",
       "category": "HSQ, binh sĩ",
@@ -278,6 +352,87 @@
       "submittedAt": "2026-09-25T09:10:14.513Z",
       "status": "approved",
       "reviewedAt": "2026-09-25T09:15:30.050Z"
+    },
+    {
+      "id": "F9rWuQYVwcw",
+      "studentId": "U7-nDbrX4Ow",
+      "studentName": "sdfad",
+      "maSoHV": "74454546",
+      "category": "HSQ, binh sĩ",
+      "currentRank": "Binh nhì",
+      "proposedRank": "Binh nhất",
+      "reason": "daqwdq",
+      "submittedAt": "2026-09-28T13:09:06.546Z",
+      "status": "approved",
+      "reviewerNote": "",
+      "reviewedAt": "2026-09-28T13:10:32.128Z"
+    },
+    {
+      "id": "5IYXmiIVyFk",
+      "studentId": "GupKv3eUq6U",
+      "studentName": "dsfasdf",
+      "maSoHV": "312312313123",
+      "category": "Học viên",
+      "currentRank": "Binh nhì",
+      "proposedRank": "Binh nhất",
+      "reason": "afsdfs",
+      "submittedAt": "2026-09-28T13:16:50.015Z",
+      "status": "approved",
+      "reviewerNote": "",
+      "reviewedAt": "2026-09-28T13:47:56.556Z"
+    },
+    {
+      "id": "V5ppgN9SvQQ",
+      "studentId": "123afsdf",
+      "studentName": "Tạ Đặng Hồng Anh",
+      "maSoHV": "2511080001",
+      "category": "HSQ, binh sĩ",
+      "currentRank": "Binh nhì",
+      "proposedRank": "Binh nhất",
+      "reason": "sadasd",
+      "submittedAt": "2026-09-28T13:16:56.512Z",
+      "status": "approved",
+      "reviewerNote": "",
+      "reviewedAt": "2026-09-28T13:47:56.556Z"
+    },
+    {
+      "id": "P1gCXtMhRw4",
+      "studentId": "123afsdf",
+      "studentName": "Tạ Đặng Hồng Anh",
+      "maSoHV": "2511080001",
+      "category": "Học viên",
+      "currentRank": "Binh nhì",
+      "proposedRank": "Hạ sỹ",
+      "reason": "Đề nghị nâng cấp theo lớp",
+      "submittedAt": "2026-09-28T13:43:34.196Z",
+      "status": "approved",
+      "reviewedAt": "2026-09-28T13:47:56.556Z"
+    },
+    {
+      "id": "2jNlW5UlpP4",
+      "studentId": "GupKv3eUq6U",
+      "studentName": "dsfasdf",
+      "maSoHV": "312312313123",
+      "category": "Học viên",
+      "currentRank": "Binh nhì",
+      "proposedRank": "Đại tá",
+      "reason": "Đề nghị nâng cấp theo lớp",
+      "submittedAt": "2026-09-28T13:43:34.196Z",
+      "status": "approved",
+      "reviewedAt": "2026-09-28T13:47:56.556Z"
+    },
+    {
+      "id": "qQ77w6thy2Q",
+      "studentId": "gsdi9WFvfdU",
+      "studentName": "đầ",
+      "maSoHV": "23131231231",
+      "category": "Học viên",
+      "currentRank": "Binh nhì",
+      "proposedRank": "Trung sỹ",
+      "reason": "Đề nghị nâng cấp theo lớp",
+      "submittedAt": "2026-09-28T13:43:34.196Z",
+      "status": "approved",
+      "reviewedAt": "2026-09-28T13:47:56.557Z"
     }
   ],
   "quanKhu": [
@@ -796,6 +951,90 @@
       "nameLuDoan": "Lữ đoàn 429",
       "idQuanKhu": "btl_bc",
       "type": "Đặc công Đông Nam Bộ"
+    }
+  ],
+  "graduationTransfers": [
+    {
+      "id": "kzJNmNCntsg",
+      "studentId": "U7-nDbrX4Ow",
+      "studentName": "sdfad",
+      "maSoHV": "74454546",
+      "type": "transfer",
+      "fromQuanKhuId": "qk_btl_hanoi",
+      "toQuanKhuId": "qk_1",
+      "fromDonViCap2Id": "suDoan:sd_301",
+      "toDonViCap2Id": "luDoan:ld_575_qk1",
+      "createdAt": "2026-09-28T13:26:30.161Z"
+    },
+    {
+      "id": "qpgzMVwcyg0",
+      "studentId": "U7-nDbrX4Ow",
+      "studentName": "sdfad",
+      "maSoHV": "74454546",
+      "type": "return",
+      "fromQuanKhuId": "qk_1",
+      "toQuanKhuId": "qk_btl_hanoi",
+      "fromDonViCap2Id": "luDoan:ld_575_qk1",
+      "toDonViCap2Id": "suDoan:sd_301",
+      "createdAt": "2026-09-28T13:29:12.341Z"
+    },
+    {
+      "id": "QL9zezTX_3k",
+      "studentId": "123afsdf",
+      "studentName": "Tạ Đặng Hồng Anh",
+      "maSoHV": "2511080001",
+      "type": "transfer",
+      "fromQuanKhuId": "qk_2",
+      "toQuanKhuId": "qk_1",
+      "fromDonViCap2Id": "suDoan:sd_316",
+      "toDonViCap2Id": "suDoan:sd_346",
+      "createdAt": "2026-09-28T14:10:13.027Z"
+    },
+    {
+      "id": "OdI2K6nkGFY",
+      "studentId": "GupKv3eUq6U",
+      "studentName": "dsfasdf",
+      "maSoHV": "312312313123",
+      "type": "return",
+      "fromQuanKhuId": "qd_4",
+      "toQuanKhuId": "qd_4",
+      "fromDonViCap2Id": "suDoan:sd_309",
+      "toDonViCap2Id": "suDoan:sd_309",
+      "createdAt": "2026-09-28T14:10:13.030Z"
+    },
+    {
+      "id": "e_M8uPB7KpA",
+      "studentId": "gsdi9WFvfdU",
+      "studentName": "đầ",
+      "maSoHV": "23131231231",
+      "type": "return",
+      "fromQuanKhuId": "qk_3",
+      "toQuanKhuId": "qk_3",
+      "fromDonViCap2Id": "suDoan:sd_395",
+      "toDonViCap2Id": "suDoan:sd_395",
+      "createdAt": "2026-09-28T14:10:13.030Z"
+    }
+  ],
+  "chucVu": [
+    {
+      "id": "cv_hoc_vien",
+      "name": "Học viên"
+    },
+    {
+      "id": "cv_lop_truong",
+      "name": "Lớp trưởng"
+    },
+    {
+      "id": "cv_lop_pho_hoc_tap",
+      "name": "Lớp phó học tập"
+    },
+    {
+      "id": "cv_lop_pho_hau_can",
+      "name": "Lớp phó hậu cần"
+    },
+    {
+      "id": "4R1G6-2UDDo",
+      "name": "Tiểu đội trưởng "
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

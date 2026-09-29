@@ -45,6 +45,36 @@ export default function CategoriesComponent() {
             Phê duyệt cấp bậc
           </li>
         </Link>
+        <Link href="/graduated-students">
+          <li className={`cursor-pointer rounded-md px-2 py-2 ${pathname === "/graduated-students" ? "bg-[#3580d6] text-white" : "hover:bg-white hover:text-black"}`}>
+            Học viên tốt nghiệp
+          </li>
+        </Link>
+        <Link href="/student-batch-actions">
+          <li className={`cursor-pointer rounded-md px-2 py-2 ${pathname === "/student-batch-actions" ? "bg-[#3580d6] text-white" : "hover:bg-white hover:text-black"}`}>
+            Thao tác theo lớp
+          </li>
+        </Link>
+        <Link href="/graduation">
+          <li className={`cursor-pointer rounded-md px-2 py-2 ${pathname === "/graduation" ? "bg-[#3580d6] text-white" : "hover:bg-white hover:text-black"}`}>
+            Tốt nghiệp & điều chỉnh công tác
+          </li>
+        </Link>
+        <Link href="/positions">
+          <li className={`cursor-pointer rounded-md px-2 py-2 ${pathname === "/positions" ? "bg-[#3580d6] text-white" : "hover:bg-white hover:text-black"}`}>
+            Quản lý chức vụ
+          </li>
+        </Link>
+        <Link href="/units">
+          <li className={`cursor-pointer rounded-md px-2 py-2 ${pathname === "/units" ? "bg-[#3580d6] text-white" : "hover:bg-white hover:text-black"}`}>
+            Quản lý Tiểu đoàn & Đại đội
+          </li>
+        </Link>
+        <Link href="/military-units">
+          <li className={`cursor-pointer rounded-md px-2 py-2 ${pathname === "/military-units" ? "bg-[#3580d6] text-white" : "hover:bg-white hover:text-black"}`}>
+            Quản lý Quân khu & đơn vị
+          </li>
+        </Link>
         <Link href="/ranks">
           <li className="cursor-pointer rounded-md px-2 py-2 hover:bg-white hover:text-black">
             Quản lý cấp bậc

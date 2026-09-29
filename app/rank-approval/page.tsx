@@ -21,7 +21,6 @@ type RankRequest = {
   status: ApprovalStatus;
   reviewerNote?: string;
 };
-const order = ["Binh nhì", "Binh nhất", "Hạ sỹ", "Trung sỹ", "Thượng sỹ"];
 const categories = ["HSQ, binh sĩ", "Học viên"] as const;
 
 export default function RankApprovalPage() {
@@ -74,10 +73,13 @@ export default function RankApprovalPage() {
           .includes(search.toLocaleLowerCase())),
   );
   const selectedStudent = students.find((s) => s.id === studentId);
-  const nextRank = selectedStudent
-    ? ranks.find(
-        (r) => r.name === order[order.indexOf(selectedStudent.capBac) + 1],
-      )
+  const currentRank = selectedStudent
+    ? ranks.find((rank) => rank.name === selectedStudent.capBac)
+    : undefined;
+  const nextRank = currentRank
+    ? ranks
+        .filter((rank) => rank.rankOrder > currentRank.rankOrder)
+        .sort((a, b) => a.rankOrder - b.rankOrder)[0]
     : undefined;
 
   const toggleSelected = (id: string) =>
@@ -153,6 +155,25 @@ export default function RankApprovalPage() {
     setReason("");
     await load();
     setStatus("pending");
+  };
+
+  const resubmit = async (reasonText: string) => {
+    if (!selected) return;
+    const res = await fetch(`http://localhost:3001/rankRequests/${selected.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        status: "pending",
+        reason: reasonText,
+        reviewerNote: "",
+        submittedAt: new Date().toISOString(),
+        reviewedAt: null,
+      }),
+    });
+    if (!res.ok) return alert("Không thể gửi lại hồ sơ chờ duyệt");
+    setSelected(null);
+    setStatus("pending");
+    await load();
   };
 
   const action = async (nextStatus: ApprovalStatus, note: string) => {
@@ -242,8 +263,8 @@ export default function RankApprovalPage() {
           </button>
         )}
       </div>
-      <div className="overflow-x-auto rounded-xl border bg-white">
-        <table className="w-full">
+      <div className="max-h-[calc(100vh-230px)] overflow-auto rounded-xl border bg-white">
+        <table className="min-w-[900px] w-full">
           <thead className="bg-gray-100">
             <tr>
               <th className="p-3 text-left">
@@ -316,6 +337,7 @@ export default function RankApprovalPage() {
             item={selected}
             onClose={() => setSelected(null)}
             onAction={action}
+            onResubmit={resubmit}
           />
         </Modal>
       )}

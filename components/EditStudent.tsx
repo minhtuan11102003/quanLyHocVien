@@ -14,9 +14,15 @@ type Student = {
   danToc: string;
   birthDay: string;
   capBac: string;
+  quanKhuId: string;
+  donViCap2Id: string;
+  tieuDoanId?: string;
+  daiDoiId?: string;
+  originQuanKhuId?: string;
+  originDonViCap2Id?: string;
 };
 
-type Major = { majorId: number | string; name: string; shortName: string };
+type Major = { id: number | string; name: string; shortName: string };
 
 type ClassItem = {
   id: number | string;
@@ -64,14 +70,61 @@ export default function EditStudentComponent({
   const [birthDay, setBirthDay] = useState(student.birthDay);
   const [selectedCapBac, setSelectedCapBac] = useState(student.capBac);
   const [loading, setLoading] = useState(false);
+  const [quanKhu, setQuanKhu] = useState<{ id: string; nameQuanKhu: string }[]>(
+    [],
+  );
+  const [subUnits, setSubUnits] = useState<
+    {
+      id: string;
+      name: string;
+      parentId: string;
+      type: string;
+      source: string;
+    }[]
+  >([]);
+  const [selectedQuanKhu, setSelectedQuanKhu] = useState(
+    student.quanKhuId || "",
+  );
+  const [selectedSubUnit, setSelectedSubUnit] = useState(
+    student.donViCap2Id || "",
+  );
+  const [tieuDoan, setTieuDoan] = useState<
+    { id: string; nameTieuDoan: string }[]
+  >([]);
+  const [daiDoi, setDaiDoi] = useState<
+    { id: string; nameDaiDoi: string; idTieuDoan: string }[]
+  >([]);
+  const [chucVuList, setChucVuList] = useState<{ id: string; name: string }[]>(
+    [],
+  );
+  const [selectedTieuDoan, setSelectedTieuDoan] = useState(
+    student.tieuDoanId || "",
+  );
+  const [selectedDaiDoi, setSelectedDaiDoi] = useState(student.daiDoiId || "");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [majorRes, classRes, rankRes] = await Promise.all([
+        const [
+          majorRes,
+          classRes,
+          rankRes,
+          quanKhuRes,
+          suDoanRes,
+          luDoanRes,
+          tdRes,
+          ddRes,
+          cvRes,
+        ] = await Promise.all([
           fetch("http://localhost:3001/majors"),
           fetch("http://localhost:3001/classes"),
           fetch("http://localhost:3001/ranks"),
+          fetch("http://localhost:3001/quanKhu"),
+          fetch("http://localhost:3001/suDoan"),
+          fetch("http://localhost:3001/luDoan"),
+          fetch("http://localhost:3001/tieuDoan"),
+          fetch("http://localhost:3001/daiDoi"),
+          fetch("http://localhost:3001/chucVu"),
         ]);
         if (!majorRes.ok || !classRes.ok || !rankRes.ok) {
           throw new Error("Không thể lấy dữ liệu");
@@ -79,6 +132,32 @@ export default function EditStudentComponent({
         const majorData = await majorRes.json();
         const classData = await classRes.json();
         const rankData = await rankRes.json();
+        const qkData = await quanKhuRes.json();
+        const sdData = await suDoanRes.json();
+        const ldData = await luDoanRes.json();
+        const tdData = tdRes.ok ? await tdRes.json() : [];
+        const ddData = ddRes.ok ? await ddRes.json() : [];
+        const cvData = cvRes.ok ? await cvRes.json() : [];
+        setTieuDoan(Array.isArray(tdData) ? tdData : []);
+        setDaiDoi(Array.isArray(ddData) ? ddData : []);
+        setChucVuList(Array.isArray(cvData) ? cvData : []);
+        setQuanKhu(qkData);
+        setSubUnits([
+          ...sdData.map((x: any) => ({
+            id: x.id,
+            name: x.nameSuDoan,
+            parentId: x.idQuanKhu,
+            type: "Sư đoàn",
+            source: "suDoan",
+          })),
+          ...ldData.map((x: any) => ({
+            id: x.id,
+            name: x.nameLuDoan,
+            parentId: x.idQuanKhu,
+            type: "Lữ đoàn",
+            source: "luDoan",
+          })),
+        ]);
         setMajors(majorData);
         setClasses(classData);
         setRanks(rankData);
@@ -98,10 +177,14 @@ export default function EditStudentComponent({
     setSelectedDanToc(student.danToc);
     setBirthDay(student.birthDay);
     setSelectedCapBac(student.capBac);
+    setSelectedQuanKhu(student.quanKhuId || "");
+    setSelectedSubUnit(student.donViCap2Id || "");
+    setSelectedTieuDoan(student.tieuDoanId || "");
+    setSelectedDaiDoi(student.daiDoiId || "");
   }, [student]);
 
   const filteredClasses = classes.filter(
-    (item) => item.majorId === selectedMajor,
+    (item) => String(item.majorId) === String(selectedMajor),
   );
 
   const handleMajorChange = (value: string) => {
@@ -120,6 +203,10 @@ export default function EditStudentComponent({
     if (!selectedDanToc.trim()) return alert("Vui lòng nhập dân tộc");
     if (!birthDay) return alert("Vui lòng chọn ngày sinh");
     if (!selectedCapBac) return alert("Vui lòng chọn cấp bậc");
+    if (!selectedQuanKhu) return alert("Vui lòng chọn quân khu");
+    if (!selectedSubUnit) return alert("Vui lòng chọn sư đoàn/lữ đoàn");
+    if (!selectedTieuDoan) return alert("Vui lòng chọn tiểu đoàn");
+    if (!selectedDaiDoi) return alert("Vui lòng chọn đại đội");
 
     const updateStudent: Student = {
       id: student.id,
@@ -127,11 +214,19 @@ export default function EditStudentComponent({
       name: name.trim(),
       majorId: selectedMajor,
       classId: selectedClass,
-      donVi: selectedDonVi,
+      donVi:
+        daiDoi.find((x) => x.id === selectedDaiDoi)?.nameDaiDoi ||
+        selectedDonVi,
       chucVu: selectedChucVu,
       danToc: selectedDanToc.trim(),
       birthDay: birthDay,
       capBac: selectedCapBac,
+      quanKhuId: selectedQuanKhu,
+      donViCap2Id: selectedSubUnit,
+      tieuDoanId: selectedTieuDoan,
+      daiDoiId: selectedDaiDoi,
+      originQuanKhuId: student.originQuanKhuId || student.quanKhuId,
+      originDonViCap2Id: student.originDonViCap2Id || student.donViCap2Id,
     };
 
     try {
@@ -156,7 +251,10 @@ export default function EditStudentComponent({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      onSubmit={handleSubmit}
+      className="h-[800px] overflow-y-auto pr-2 space-y-5"
+    >
       <div className="mb-5">
         <h2 className="text-2xl font-bold text-gray-800">Sửa học viên</h2>
         <p className="mt-1 text-sm text-gray-500">
@@ -197,7 +295,7 @@ export default function EditStudentComponent({
         >
           <option value="">-- Chọn ngành --</option>
           {majors.map((major) => (
-            <option key={major.majorId} value={String(major.majorId)}>
+            <option key={major.id} value={String(major.id)}>
               {major.name}
             </option>
           ))}
@@ -227,20 +325,90 @@ export default function EditStudentComponent({
         </select>
       </div>
 
-      {/* ĐƠN VỊ */}
+      {/* QUÂN KHU VÀ ĐƠN VỊ CẤP 2 */}
       <div className="mb-4">
-        <label className="mb-2 block font-medium">Đơn vị</label>
+        <label className="mb-2 block font-medium">Quân khu</label>
         <select
-          value={selectedDonVi}
-          onChange={(e) => setSelectedDonVi(e.target.value)}
+          value={selectedQuanKhu}
+          onChange={(e) => {
+            setSelectedQuanKhu(e.target.value);
+            setSelectedSubUnit("");
+          }}
           className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
         >
-          <option value="">-- Chọn đơn vị --</option>
-          {donViList.map((item) => (
-            <option key={item.id} value={item.donVi}>
-              {item.donVi}
+          <option value="">-- Chọn quân khu --</option>
+          {quanKhu.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.nameQuanKhu}
             </option>
           ))}
+        </select>
+      </div>
+      <div className="mb-4">
+        <label className="mb-2 block font-medium">Sư đoàn/Lữ đoàn</label>
+        <select
+          value={selectedSubUnit}
+          onChange={(e) => setSelectedSubUnit(e.target.value)}
+          disabled={!selectedQuanKhu}
+          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none disabled:bg-gray-100 focus:border-blue-500"
+        >
+          <option value="">
+            {selectedQuanKhu
+              ? "-- Chọn đơn vị --"
+              : "-- Chọn quân khu trước --"}
+          </option>
+          {subUnits
+            .filter((x) => x.parentId === selectedQuanKhu)
+            .map((item) => (
+              <option
+                key={`${item.source}:${item.id}`}
+                value={`${item.source}:${item.id}`}
+              >
+                {item.type} {item.name}
+              </option>
+            ))}
+        </select>
+      </div>
+
+      {/* TIỂU ĐOÀN / ĐẠI ĐỘI */}
+      <div className="mb-4">
+        <label className="mb-2 block font-medium">Tiểu đoàn</label>
+        <select
+          value={selectedTieuDoan}
+          onChange={(e) => {
+            setSelectedTieuDoan(e.target.value);
+            setSelectedDaiDoi("");
+          }}
+          className="w-full rounded-lg border border-gray-300 px-4 py-3"
+        >
+          <option value="">-- Chọn Tiểu đoàn --</option>
+          {tieuDoan.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.nameTieuDoan}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="mb-4">
+        <label className="mb-2 block font-medium">Đại đội quản lý lớp</label>
+        <select
+          value={selectedDaiDoi}
+          onChange={(e) => setSelectedDaiDoi(e.target.value)}
+          disabled={!selectedTieuDoan}
+          className="w-full rounded-lg border border-gray-300 px-4 py-3 disabled:bg-gray-100"
+        >
+          <option value="">
+            {selectedTieuDoan
+              ? "-- Chọn Đại đội --"
+              : "-- Chọn Tiểu đoàn trước --"}
+          </option>
+          {daiDoi
+            .filter((x) => String(x.idTieuDoan) === String(selectedTieuDoan))
+            .map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.nameDaiDoi}
+              </option>
+            ))}
         </select>
       </div>
 
@@ -253,9 +421,9 @@ export default function EditStudentComponent({
           className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
         >
           <option value="">-- Chọn chức vụ --</option>
-          {chucVuList.map((item) => (
-            <option key={item.id} value={item.chucVu}>
-              {item.chucVu}
+          {chucVuList.map((x) => (
+            <option key={x.id} value={x.name}>
+              {x.name}
             </option>
           ))}
         </select>

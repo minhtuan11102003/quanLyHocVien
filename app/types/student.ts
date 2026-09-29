@@ -9,6 +9,14 @@ export type Student = {
   danToc: string;
   birthDay: string;
   capBac: string;
+  quanKhuId: string;
+  donViCap2Id: string;
+  tieuDoanId?: string;
+  daiDoiId?: string;
+  originQuanKhuId?: string;
+  originDonViCap2Id?: string;
+  graduationStatus?: "graduated" | string;
+  graduatedAt?: string;
 };
 
 export type NganhDaoTao = {
@@ -31,3 +39,11 @@ export type QuanKhu = {
 };
 
 export type PaginationItem = number | "...";
+
+export type DonViCap2 = {
+  id: string;
+  name: string;
+  parentId: string;
+  type: "Sư đoàn" | "Lữ đoàn";
+  source: "suDoan" | "luDoan";
+};

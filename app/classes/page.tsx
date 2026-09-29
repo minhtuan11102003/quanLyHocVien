@@ -3,6 +3,7 @@
 
 import AddClassComponent from "@/components/AddClass";
 import EditClassComponent from "@/components/EditClass";
+import MajorManagement from "@/components/MajorManagement";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
@@ -45,6 +46,7 @@ export default function ClassManagement() {
   const [currentPage, setCurrentPage] = useState(1);
 
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [tab, setTab] = useState<"classes" | "majors">("classes");
 
   // =========================
   // FETCH DATA
@@ -82,7 +84,7 @@ export default function ClassManagement() {
   const filteredClasses = classes.filter((item) => {
     // Lọc theo ngành
     const matchMajor =
-      selectedMajorId === "all" || item.majorId === selectedMajorId;
+      selectedMajorId === "all" || String(item.majorId) === String(selectedMajorId);
 
     // Lọc theo tên lớp
     const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
@@ -156,12 +158,12 @@ export default function ClassManagement() {
       if (!studentsRes.ok) throw new Error("Không thể kiểm tra học viên thuộc lớp");
 
       const students = await studentsRes.json();
-      if (students.some((student: { classId: string }) => student.classId === id)) {
+      if (students.some((student: { classId: string }) => String(student.classId) === String(id))) {
         alert("Không thể xóa lớp đang có học viên. Hãy chuyển hoặc xóa học viên trước.");
         return;
       }
 
-      const res = await fetch(`http://localhost:3001/classes/`, {
+      const res = await fetch(`http://localhost:3001/classes/${id}`, {
         method: "DELETE",
       });
 
@@ -227,8 +229,13 @@ export default function ClassManagement() {
     setCurrentPage(1);
   };
 
+  if (tab === "majors") {
+    return <div className="p-4"><div className="mb-4 flex gap-2"><button onClick={() => setTab("majors")} className="rounded-lg bg-blue-600 px-4 py-2 text-white">Chuyên ngành</button><button onClick={() => setTab("classes")} className="rounded-lg border px-4 py-2">Lớp học</button></div><h1 className="mb-4 text-2xl font-bold">Quản lý chuyên ngành</h1><MajorManagement onChanged={fetchData} /></div>;
+  }
+
   return (
     <div className="p-2">
+      <div className="mb-4 flex gap-2"><button onClick={() => setTab("majors")} className="rounded-lg border px-4 py-2">Chuyên ngành</button><button onClick={() => setTab("classes")} className="rounded-lg bg-blue-600 px-4 py-2 text-white">Lớp học</button></div>
       {/* =================================
           HEADER
       ================================= */}
@@ -350,8 +357,8 @@ export default function ClassManagement() {
           TABLE
       ================================= */}
 
-      <div className=" overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md">
-        <table className="w-full border-collapse">
+      <div className="max-h-[calc(100vh-230px)] overflow-auto rounded-xl border border-gray-200 bg-white shadow-md">
+        <table className="min-w-[760px] w-full border-collapse">
           <thead className="bg-gray-200">
             <tr>
               <th className="px-6 py-4 text-left text-xl font-bold">STT</th>
@@ -379,7 +386,7 @@ export default function ClassManagement() {
             ) : (
               currentClasses.map((value, index) => {
                 const major = nganhDaoTao.find(
-                  (item) => item.id === value.majorId,
+                  (item) => String(item.id) === String(value.majorId),
                 );
 
                 return (
