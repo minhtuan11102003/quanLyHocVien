@@ -31,6 +31,7 @@ type ClassItem = {
   id: number | string;
   majorId: number | string;
   name: string;
+  daiDoiId?: string;
 };
 
 type EditStudentProps = {
@@ -38,21 +39,7 @@ type EditStudentProps = {
   onClose: () => void;
   onUpdate: (student: Student) => void;
 };
-
-const donViList = [
-  { id: 1, donVi: "Đại đội 1" },
-  { id: 2, donVi: "Đại đội 2" },
-  { id: 3, donVi: "Đại đội 3" },
-  { id: 4, donVi: "Đại đội 4" },
-  { id: 5, donVi: "Đại đội 5" },
-];
-
-const chucVuList = [
-  { id: 1, chucVu: "Lớp trưởng" },
-  { id: 2, chucVu: "Lớp phó hậu cần" },
-  { id: 3, chucVu: "Lớp phó học tập" },
-  { id: 4, chucVu: "Học viên" },
-];
+type NamedUnit = { id: string; idQuanKhu: string; nameSuDoan?: string; nameLuDoan?: string };
 
 export default function EditStudentComponent({
   student,
@@ -147,16 +134,16 @@ export default function EditStudentComponent({
         setChucVuList(Array.isArray(cvData) ? cvData : []);
         setQuanKhu(qkData);
         setSubUnits([
-          ...sdData.map((x: any) => ({
+          ...(sdData as NamedUnit[]).map((x) => ({
             id: x.id,
-            name: x.nameSuDoan,
+            name: x.nameSuDoan || "Chưa đặt tên",
             parentId: x.idQuanKhu,
             type: "Sư đoàn",
             source: "suDoan",
           })),
-          ...ldData.map((x: any) => ({
+          ...(ldData as NamedUnit[]).map((x) => ({
             id: x.id,
-            name: x.nameLuDoan,
+            name: x.nameLuDoan || "Chưa đặt tên",
             parentId: x.idQuanKhu,
             type: "Lữ đoàn",
             source: "luDoan",
@@ -193,7 +180,10 @@ export default function EditStudentComponent({
   };
 
   const filteredClasses = classes.filter(
-    (item) => String(item.majorId) === String(selectedMajor),
+    (item) => String(item.majorId) === String(selectedMajor) && String(item.daiDoiId || "") === String(selectedDaiDoi),
+  );
+  const availableMajors = majors.filter((major) =>
+    classes.some((item) => String(item.majorId) === String(major.id) && String(item.daiDoiId || "") === String(selectedDaiDoi)),
   );
 
   const handleMajorChange = (value: string) => {
@@ -263,48 +253,44 @@ export default function EditStudentComponent({
   return (
     <form
       onSubmit={handleSubmit}
-      className="h-[800px] overflow-y-auto pr-2 space-y-5"
+      className="student-form flex flex-col gap-6"
     >
-      <div className="mb-5">
-        <h2 className="text-2xl font-bold text-gray-800">Sửa học viên</h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Cập nhật thông tin học viên
-        </p>
-      </div>
+      <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-blue-900">Các trường có liên kết đơn vị được sắp theo thứ tự từ quân khu đến đại đội để hạn chế chọn sai dữ liệu.</div>
 
       {/* MÃ SỐ HỌC VIÊN */}
       <div className="mb-4">
-        <label className="mb-2 block font-medium">Mã số học viên</label>
+        <label className="field-label">Mã số học viên</label>
         <input
           type="text"
           value={student.maSoHV}
           disabled
-          className="w-full rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 text-gray-500 outline-none"
+          className="field-control bg-slate-100 text-slate-500"
         />
       </div>
 
       {/* TÊN HỌC VIÊN */}
       <div className="mb-4">
-        <label className="mb-2 block font-medium">Tên học viên</label>
+        <label className="field-label">Tên học viên</label>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
           placeholder="Nhập tên học viên"
         />
       </div>
 
-      {/* NGÀNH ĐÀO TẠO */}
-      <div className="mb-4">
-        <label className="mb-2 block font-medium">Ngành đào tạo</label>
+      {/* NGÀNH ĐÀO TẠO — shown after Đại đội via flex order */}
+      <div className="order-20 mb-4">
+        <label className="field-label">Ngành đào tạo</label>
         <select
           value={selectedMajor}
           onChange={(e) => handleMajorChange(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          disabled={!selectedDaiDoi}
+          className="field-control disabled:bg-slate-100"
         >
-          <option value="">-- Chọn ngành --</option>
-          {majors.map((major) => (
+          <option value="">{selectedDaiDoi ? "-- Chọn ngành --" : "-- Chọn Đại đội trước --"}</option>
+          {availableMajors.map((major) => (
             <option key={major.id} value={String(major.id)}>
               {major.name}
             </option>
@@ -313,16 +299,18 @@ export default function EditStudentComponent({
       </div>
 
       {/* LỚP HỌC */}
-      <div className="mb-4">
-        <label className="mb-2 block font-medium">Chọn lớp học</label>
+      <div className="order-21 mb-4">
+        <label className="field-label">Chọn lớp học</label>
         <select
-          disabled={!selectedMajor}
+          disabled={!selectedMajor || !selectedDaiDoi}
           value={selectedClass}
           onChange={(e) => setSelectedClass(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         >
           {!selectedMajor ? (
             <option value="">-- Chưa chọn ngành --</option>
+          ) : !selectedDaiDoi ? (
+            <option value="">-- Chọn Đại đội trước --</option>
           ) : (
             <option value="">-- Chọn lớp học --</option>
           )}
@@ -336,15 +324,15 @@ export default function EditStudentComponent({
       </div>
 
       {/* QUÂN KHU VÀ ĐƠN VỊ CẤP 2 */}
-      <div className="mb-4">
-        <label className="mb-2 block font-medium">Quân khu</label>
+      <div className="order-30 mb-4">
+        <label className="field-label">Quân khu</label>
         <select
           value={selectedQuanKhu}
           onChange={(e) => {
             setSelectedQuanKhu(e.target.value);
             setSelectedSubUnit("");
           }}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         >
           <option value="">-- Chọn quân khu --</option>
           {quanKhu.map((item) => (
@@ -354,13 +342,13 @@ export default function EditStudentComponent({
           ))}
         </select>
       </div>
-      <div className="mb-4">
-        <label className="mb-2 block font-medium">Sư đoàn/Lữ đoàn</label>
+      <div className="order-31 mb-4">
+        <label className="field-label">Sư đoàn/Lữ đoàn</label>
         <select
           value={selectedSubUnit}
           onChange={(e) => setSelectedSubUnit(e.target.value)}
           disabled={!selectedQuanKhu}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none disabled:bg-gray-100 focus:border-blue-500"
+          className="field-control disabled:bg-slate-100"
         >
           <option value="">
             {selectedQuanKhu
@@ -381,15 +369,15 @@ export default function EditStudentComponent({
       </div>
 
       {/* TIỂU ĐOÀN / ĐẠI ĐỘI */}
-      <div className="mb-4">
-        <label className="mb-2 block font-medium">Tiểu đoàn</label>
+      <div className="order-32 mb-4">
+        <label className="field-label">Tiểu đoàn</label>
         <select
           value={selectedTieuDoan}
           onChange={(e) => {
             setSelectedTieuDoan(e.target.value);
             setSelectedDaiDoi("");
           }}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3"
+          className="field-control"
         >
           <option value="">-- Chọn Tiểu đoàn --</option>
           {tieuDoan.map((x) => (
@@ -400,12 +388,12 @@ export default function EditStudentComponent({
         </select>
       </div>
       <div className="mb-4">
-        <label className="mb-2 block font-medium">Đại đội quản lý lớp</label>
+        <label className="field-label">Đại đội quản lý lớp</label>
         <select
           value={selectedDaiDoi}
-          onChange={(e) => setSelectedDaiDoi(e.target.value)}
+          onChange={(e) => { setSelectedDaiDoi(e.target.value); setSelectedMajor(""); setSelectedClass(""); }}
           disabled={!selectedTieuDoan}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 disabled:bg-gray-100"
+          className="field-control disabled:bg-slate-100"
         >
           <option value="">
             {selectedTieuDoan
@@ -424,11 +412,11 @@ export default function EditStudentComponent({
 
       {/* CHỨC VỤ */}
       <div className="mb-4">
-        <label className="mb-2 block font-medium">Chức vụ</label>
+        <label className="field-label">Chức vụ</label>
         <select
           value={selectedChucVu}
           onChange={(e) => setSelectedChucVu(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         >
           <option value="">-- Chọn chức vụ --</option>
           {chucVuList.map((x) => (
@@ -441,34 +429,34 @@ export default function EditStudentComponent({
 
       {/* DÂN TỘC */}
       <div className="mb-4">
-        <label className="mb-2 block font-medium">Dân tộc</label>
+        <label className="field-label">Dân tộc</label>
         <input
           type="text"
           value={selectedDanToc}
           onChange={(e) => setSelectedDanToc(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
           placeholder="Nhập dân tộc"
         />
       </div>
 
       {/* NGÀY SINH */}
       <div className="mb-4">
-        <label className="mb-2 block font-medium">Ngày sinh</label>
+        <label className="field-label">Ngày sinh</label>
         <input
           type="date"
           value={birthDay}
           onChange={(e) => setBirthDay(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         />
       </div>
 
       {/* CẤP BẬC */}
       <div className="mb-6">
-        <label className="mb-2 block font-medium">Cấp bậc</label>
+        <label className="field-label">Cấp bậc</label>
         <select
           value={selectedCapBac}
           onChange={(e) => setSelectedCapBac(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         >
           <option value="">-- Chọn cấp bậc --</option>
           {[...ranks]
@@ -483,19 +471,19 @@ export default function EditStudentComponent({
 
       <StudentProfileExtraFields value={extra} onChange={handleExtraChange} />
       {/* BUTTON */}
-      <div className="flex justify-end gap-3">
+      <div className="sticky bottom-0 -mx-1 flex justify-end gap-3 border-t border-slate-100 bg-white/95 px-1 pt-5 backdrop-blur">
         <button
           type="button"
           onClick={onClose}
           disabled={loading}
-          className="rounded-lg bg-gray-300 px-5 py-3 font-medium hover:bg-gray-400 disabled:opacity-50"
+          className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
           Hủy
         </button>
         <button
           type="submit"
           disabled={loading}
-          className="rounded-lg bg-blue-500 px-5 py-3 font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+          className="rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? "Đang lưu..." : "Lưu thay đổi"}
         </button>

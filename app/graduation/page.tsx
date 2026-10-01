@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -21,6 +22,7 @@ type Unit = {
   type: string;
   source: "suDoan" | "luDoan";
 };
+type UnitRecord = { id: string; idQuanKhu: string; nameSuDoan?: string; nameLuDoan?: string };
 type Transfer = {
   id: string;
   studentId: string;
@@ -67,19 +69,19 @@ export default function GraduationPage() {
     setRegions(regionData);
     setHistory(historyData);
     setUnits([
-      ...sdData.map((x: any) => ({
+      ...(sdData as UnitRecord[]).map((x) => ({
         id: x.id,
-        name: x.nameSuDoan,
+        name: x.nameSuDoan || "Chưa đặt tên",
         parentId: x.idQuanKhu,
         type: "Sư đoàn",
-        source: "suDoan",
+        source: "suDoan" as const,
       })),
-      ...ldData.map((x: any) => ({
+      ...(ldData as UnitRecord[]).map((x) => ({
         id: x.id,
-        name: x.nameLuDoan,
+        name: x.nameLuDoan || "Chưa đặt tên",
         parentId: x.idQuanKhu,
         type: "Lữ đoàn",
-        source: "luDoan",
+        source: "luDoan" as const,
       })),
     ]);
   };
@@ -163,30 +165,31 @@ export default function GraduationPage() {
   };
 
   return (
-    <div className="p-4">
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold">Tốt nghiệp & điều chỉnh công tác</h1>
-        <p className="mt-1 text-gray-500">
+    <div className="page-shell space-y-5">
+      <header className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-700 to-teal-700 p-6 text-white shadow-lg shadow-emerald-900/10">
+        <p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-100">Điều hành đào tạo</p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight">Tốt nghiệp & điều chỉnh công tác</h1>
+        <p className="mt-2 max-w-2xl text-sm text-emerald-50">
           Ghi nhận học viên tốt nghiệp, về đơn vị cũ hoặc chuyển sang đơn vị
           mới.
         </p>
-      </div>
+      </header>
       <form
         onSubmit={submit}
-        className="mb-6 max-w-3xl space-y-4 rounded-xl border bg-white p-5 shadow-sm"
+        className="max-w-4xl space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
       >
-        <h2 className="text-lg font-bold">Lập quyết định</h2>
+        <div><p className="text-xs font-bold uppercase tracking-[.16em] text-emerald-700">Quyết định mới</p><h2 className="mt-1 text-xl font-bold text-slate-900">Lập quyết định tốt nghiệp</h2></div>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Tìm theo tên hoặc mã số..."
-          className="w-full rounded-lg border px-3 py-2.5"
+          className="field-control"
         />
         <select
           required
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
-          className="w-full rounded-lg border px-3 py-2.5"
+          className="field-control"
         >
           <option value="">-- Chọn học viên --</option>
           {visibleStudents.map((x) => (
@@ -197,15 +200,15 @@ export default function GraduationPage() {
           ))}
         </select>
         {student && (
-          <div className="rounded-lg bg-gray-50 p-3 text-sm">
+          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
             <div>
               <b>Đơn vị hiện tại:</b> {regionName(student.quanKhuId)} /{" "}
               {unitName(student.donViCap2Id)}
             </div>
           </div>
         )}
-        <div className="flex gap-5">
-          <label className="flex items-center gap-2">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm font-medium transition ${mode === "return" ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-slate-200 text-slate-700"}`}>
             <input
               type="radio"
               checked={mode === "return"}
@@ -217,7 +220,7 @@ export default function GraduationPage() {
             />{" "}
             Về đơn vị cũ
           </label>
-          <label className="flex items-center gap-2">
+          <label className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm font-medium transition ${mode === "transfer" ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-slate-200 text-slate-700"}`}>
             <input
               type="radio"
               checked={mode === "transfer"}
@@ -235,7 +238,7 @@ export default function GraduationPage() {
                 setTargetRegion(e.target.value);
                 setTargetUnit("");
               }}
-              className="w-full rounded-lg border px-3 py-2.5"
+              className="field-control"
             >
               <option value="">-- Chọn Quân khu mới --</option>
               {regions.map((x) => (
@@ -249,7 +252,7 @@ export default function GraduationPage() {
               disabled={!targetRegion}
               value={targetUnit}
               onChange={(e) => setTargetUnit(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2.5 disabled:bg-gray-100"
+              className="field-control disabled:bg-slate-100"
             >
               <option value="">
                 {targetRegion
@@ -267,18 +270,18 @@ export default function GraduationPage() {
             </select>
           </>
         )}
-        <div className="flex justify-end">
+        <div className="flex justify-end border-t border-slate-100 pt-4">
           <button
             disabled={saving}
-            className="rounded-lg bg-blue-600 px-4 py-2.5 text-white disabled:opacity-50"
+            className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 disabled:opacity-50"
           >
             {saving ? "Đang lưu..." : "Xác nhận tốt nghiệp & công tác"}
           </button>
         </div>
       </form>
-      <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
+      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 px-5 py-4"><h2 className="font-bold text-slate-900">Lịch sử quyết định</h2><p className="mt-0.5 text-sm text-slate-500">Các quyết định đã được ghi nhận trong hệ thống.</p></div><div className="overflow-x-auto">
         <table className="min-w-[900px] w-full">
-          <thead className="bg-gray-100">
+          <thead className="bg-slate-50">
             <tr>
               <th className="p-3 text-left">Học viên</th>
               <th className="p-3 text-left">Hình thức</th>
@@ -317,7 +320,7 @@ export default function GraduationPage() {
             )}
           </tbody>
         </table>
-      </div>
+      </div></section>
     </div>
   );
 }

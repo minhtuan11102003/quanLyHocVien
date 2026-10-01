@@ -25,15 +25,15 @@ export default function StudentPagination({
   const isShowAll = itemsPerPage == 0;
 
   return (
-    <div className="flex items-center justify-between border-t p-4">
+    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
       {/* ITEMS PER PAGE */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600">Hiển thị</span>
+      <div className="flex items-center gap-2 text-sm text-slate-600">
+        <span>Hiển thị</span>
 
         <select
           value={itemsPerPage}
           onChange={onItemsPerPageChange}
-          className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+          className="rounded-xl border border-slate-200 bg-white px-3 py-2 font-medium text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
         >
           <option value={5}>5</option>
           <option value={10}>10</option>
@@ -43,17 +43,17 @@ export default function StudentPagination({
           <option value={0}>Tất cả</option>
         </select>
 
-        <span className="text-sm text-gray-600">học viên / trang</span>
+        <span>học viên / trang</span>
       </div>
 
       {/* PAGINATION */}
       {!isShowAll && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* TRƯỚC */}
           <button
             disabled={currentPage === 1}
             onClick={() => onPageChange(currentPage - 1)}
-            className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
           >
             Trước
           </button>
@@ -72,10 +72,10 @@ export default function StudentPagination({
               <button
                 key={page}
                 onClick={() => onPageChange(page)}
-                className={`rounded border px-4 py-2 ${
+                className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
                   currentPage === page
-                    ? "border-blue-500 bg-blue-500 text-white"
-                    : "border-gray-300 bg-white hover:bg-gray-100"
+                    ? "border-blue-600 bg-blue-600 text-white shadow-sm"
+                    : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 {page}
@@ -87,7 +87,7 @@ export default function StudentPagination({
           <button
             disabled={currentPage === totalPages || totalPages === 0}
             onClick={() => onPageChange(currentPage + 1)}
-            className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
           >
             Sau
           </button>

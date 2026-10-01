@@ -56,10 +56,22 @@ export default function RankManagementPage() {
       ]);
       const students = studentsResponse.ok ? await studentsResponse.json() : [];
       const requests = requestsResponse.ok ? await requestsResponse.json() : [];
-      const usedByStudent = Array.isArray(students) && students.some((student: { capBac?: string }) => student.capBac === rank.name);
-      const usedByRequest = Array.isArray(requests) && requests.some((request: { currentRank?: string; proposedRank?: string }) => request.currentRank === rank.name || request.proposedRank === rank.name);
+      const usedByStudent =
+        Array.isArray(students) &&
+        students.some(
+          (student: { capBac?: string }) => student.capBac === rank.name,
+        );
+      const usedByRequest =
+        Array.isArray(requests) &&
+        requests.some(
+          (request: { currentRank?: string; proposedRank?: string }) =>
+            request.currentRank === rank.name ||
+            request.proposedRank === rank.name,
+        );
       if (usedByStudent || usedByRequest) {
-        alert("Không thể xóa cấp bậc đang được học viên hoặc hồ sơ nâng cấp sử dụng.");
+        alert(
+          "Không thể xóa cấp bậc đang được học viên hoặc hồ sơ nâng cấp sử dụng.",
+        );
         return;
       }
       const response = await fetch(`http://localhost:3001/ranks/${rank.id}`, {
@@ -84,124 +96,174 @@ export default function RankManagementPage() {
   };
 
   return (
-    <div className="p-4">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Quản lý cấp bậc</h1>
-          <p className="mt-1 text-gray-500">
-            Tổng số:{" "}
-            <span className="font-bold text-blue-600">{ranks.length}</span> cấp
-            bậc
-          </p>
+    <div className="min-h-screen bg-slate-100 p-4 md:p-6">
+      <div className="mx-auto max-w-7xl space-y-5">
+        <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-gradient-to-r from-indigo-600 to-blue-700 p-5 text-white shadow-lg md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-100">
+              Danh mục hệ thống
+            </p>
+            <h1 className="mt-2 text-2xl font-bold">Quản lý cấp bậc</h1>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 backdrop-blur-sm">
+            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+            <span className="text-sm font-medium text-indigo-50">
+              {ranks.length} cấp bậc đang có
+            </span>
+          </div>
         </div>
-        <button
-          onClick={openAdd}
-          className="rounded-lg bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-700"
-        >
-          + Thêm cấp bậc
-        </button>
-      </div>
 
-      <div className="mb-4 flex flex-wrap gap-3 rounded-xl border bg-white p-4 shadow-sm">
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm theo tên cấp bậc..."
-          className="min-w-60 flex-1 rounded-lg border px-4 py-2.5"
-        />
-        <select
-          value={group}
-          onChange={(e) => setGroup(e.target.value as GroupFilter)}
-          className="rounded-lg border px-4 py-2.5"
-        >
-          <option value="all">Tất cả nhóm</option>
-          <option value="Hạ sĩ quan, binh sĩ">Hạ sĩ quan, binh sĩ</option>
-          <option value="Sĩ quan, Quân nhân chuyên nghiệp">
-            Sĩ quan, QNCN
-          </option>
-        </select>
-      </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-slate-500">Tổng cấp bậc</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {ranks.length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-slate-500">Nhóm hiện tại</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">
+              {group === "all" ? "Tất cả" : group}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-slate-500">Kết quả</p>
+            <p className="mt-2 text-3xl font-bold text-indigo-600">
+              {visibleRanks.length}
+            </p>
+          </div>
+        </div>
 
-      <div className="max-h-[calc(100vh-230px)] overflow-auto rounded-xl border bg-white shadow-sm">
-        <table className="min-w-[760px] w-full border-collapse">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-5 py-3 text-left">Thứ tự</th>
-              <th className="px-5 py-3 text-left">Cấp bậc</th>
-              <th className="px-5 py-3 text-left">Nhóm</th>
-              <th className="px-5 py-3 text-left">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={4} className="p-8 text-center text-gray-500">
-                  Đang tải...
-                </td>
-              </tr>
-            ) : error ? (
-              <tr>
-                <td colSpan={4} className="p-8 text-center text-red-600">
-                  {error}
-                </td>
-              </tr>
-            ) : visibleRanks.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="p-8 text-center text-gray-500">
-                  Không tìm thấy cấp bậc
-                </td>
-              </tr>
-            ) : (
-              visibleRanks.map((rank) => (
-                <tr key={rank.id} className="border-t hover:bg-gray-50">
-                  <td className="px-5 py-3">{rank.rankOrder}</td>
-                  <td className="px-5 py-3 font-medium">{rank.name}</td>
-                  <td className="px-5 py-3">{rank.group}</td>
-                  <td className="flex gap-2 px-5 py-3">
-                    <button
-                      onClick={() => setDetailRank(rank)}
-                      className="rounded bg-gray-600 px-3 py-1.5 text-white"
-                    >
-                      Chi tiết
-                    </button>
-                    <button
-                      onClick={() => openEdit(rank)}
-                      className="rounded bg-blue-600 px-3 py-1.5 text-white"
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      onClick={() => removeRank(rank)}
-                      className="rounded bg-red-600 px-3 py-1.5 text-white"
-                    >
-                      Xóa
-                    </button>
-                  </td>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm theo tên cấp bậc..."
+              className="min-w-60 flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+            />
+            <select
+              value={group}
+              onChange={(e) => setGroup(e.target.value as GroupFilter)}
+              className="min-w-[220px] rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+            >
+              <option value="all">Tất cả nhóm</option>
+              <option value="Hạ sĩ quan, binh sĩ">Hạ sĩ quan, binh sĩ</option>
+              <option value="Sĩ quan, Quân nhân chuyên nghiệp">
+                Sĩ quan, QNCN
+              </option>
+            </select>
+            <button
+              onClick={openAdd}
+              className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
+              + Thêm cấp bậc
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-auto">
+            <table className="min-w-[760px] w-full border-collapse">
+              <thead className="bg-slate-100">
+                <tr>
+                  <th className="px-5 py-3 text-left text-sm font-semibold uppercase tracking-wide text-slate-600">
+                    Thứ tự
+                  </th>
+                  <th className="px-5 py-3 text-left text-sm font-semibold uppercase tracking-wide text-slate-600">
+                    Cấp bậc
+                  </th>
+                  <th className="px-5 py-3 text-left text-sm font-semibold uppercase tracking-wide text-slate-600">
+                    Nhóm
+                  </th>
+                  <th className="px-5 py-3 text-left text-sm font-semibold uppercase tracking-wide text-slate-600">
+                    Thao tác
+                  </th>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-500">
+                      Đang tải...
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-red-600">
+                      {error}
+                    </td>
+                  </tr>
+                ) : visibleRanks.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-500">
+                      Không tìm thấy cấp bậc
+                    </td>
+                  </tr>
+                ) : (
+                  visibleRanks.map((rank) => (
+                    <tr
+                      key={rank.id}
+                      className="border-t border-slate-200 hover:bg-slate-50"
+                    >
+                      <td className="px-5 py-4 text-slate-600">
+                        {rank.rankOrder}
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="inline-flex rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+                          {rank.name}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-slate-700">{rank.group}</td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => setDetailRank(rank)}
+                            className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                          >
+                            Chi tiết
+                          </button>
+                          <button
+                            onClick={() => openEdit(rank)}
+                            className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            onClick={() => removeRank(rank)}
+                            className="rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-600"
+                          >
+                            Xóa
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-      {isFormOpen && (
-        <Modal onClose={() => setIsFormOpen(false)}>
-          <RankForm
-            key={formRank?.id ?? "new"}
-            rank={formRank}
-            onClose={() => setIsFormOpen(false)}
-            onSaved={fetchRanks}
-          />
-        </Modal>
-      )}
-      {detailRank && (
-        <Modal onClose={() => setDetailRank(undefined)}>
-          <RankDetail
-            rank={detailRank}
-            onClose={() => setDetailRank(undefined)}
-          />
-        </Modal>
-      )}
+        {isFormOpen && (
+          <Modal onClose={() => setIsFormOpen(false)}>
+            <RankForm
+              key={formRank?.id ?? "new"}
+              rank={formRank}
+              onClose={() => setIsFormOpen(false)}
+              onSaved={fetchRanks}
+            />
+          </Modal>
+        )}
+        {detailRank && (
+          <Modal onClose={() => setDetailRank(undefined)}>
+            <RankDetail
+              rank={detailRank}
+              onClose={() => setDetailRank(undefined)}
+            />
+          </Modal>
+        )}
+      </div>
     </div>
   );
 }
@@ -219,7 +281,7 @@ function Modal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-xl bg-white shadow-2xl"
+        className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         {children}

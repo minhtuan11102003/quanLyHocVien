@@ -1,6 +1,8 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { useEffect, useState } from "react";
 type Major = { id: string; name: string; shortName: string };
+type ClassRecord = { majorId: string };
 export default function MajorManagement({
   onChanged,
 }: {
@@ -17,7 +19,7 @@ export default function MajorManagement({
   }, []);
   const remove = async (x: Major) => {
     const classes = await (await fetch("http://localhost:3001/classes")).json();
-    if (classes.some((c: any) => String(c.majorId) === String(x.id)))
+    if ((classes as ClassRecord[]).some((c) => String(c.majorId) === String(x.id)))
       return alert(
         "Không thể xóa chuyên ngành vì vẫn còn lớp học thuộc chuyên ngành này.",
       );

@@ -3,8 +3,9 @@
 import AddStudentComponent from "@/components/AddStudent";
 import EditStudentComponent from "@/components/EditStudent";
 import EditManyStudent from "@/components/EditManyStudent";
+import { ModalShell } from "@/components/ui/modal-shell";
 
-import type { QuanKhu, Student } from "@/app/types/student";
+import type { Student } from "@/app/types/student";
 
 type StudentModalsProps = {
   isOpen: boolean;
@@ -13,8 +14,6 @@ type StudentModalsProps = {
 
   selectedIds: string[];
   students: Student[];
-  quanKhu: QuanKhu[];
-
   onCloseAdd: () => void;
   onCloseEdit: () => void;
   onCloseEditMany: () => void;
@@ -29,8 +28,6 @@ export default function StudentModals({
   isEditManyOpen,
   selectedIds,
   students,
-  quanKhu,
-
   onCloseAdd,
   onCloseEdit,
   onCloseEditMany,
@@ -45,29 +42,14 @@ export default function StudentModals({
       ========================= */}
 
       {isOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={onCloseAdd}
-        >
-          <div
-            className="relative w-[600px] rounded-xl bg-white p-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={onCloseAdd}
-              className="absolute right-4 top-3 z-10 text-2xl text-gray-500 hover:text-red-500"
-            >
-              ×
-            </button>
-
+        <ModalShell title="Thêm học viên" description="Nhập hồ sơ và thiết lập các liên kết quản lý." onClose={onCloseAdd}>
             <AddStudentComponent
               onClose={async () => {
                 onCloseAdd();
                 await onAddSuccess();
               }}
             />
-          </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* =========================
@@ -75,28 +57,13 @@ export default function StudentModals({
       ========================= */}
 
       {editStudent && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={onCloseEdit}
-        >
-          <div
-            className="relative w-[600px] rounded-xl bg-white p-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={onCloseEdit}
-              className="absolute right-4 top-3 z-10 text-2xl text-gray-500 hover:text-red-500"
-            >
-              ×
-            </button>
-
+        <ModalShell title="Chỉnh sửa học viên" description={`Cập nhật hồ sơ của ${editStudent.name}.`} onClose={onCloseEdit}>
             <EditStudentComponent
               student={editStudent}
               onClose={onCloseEdit}
               onUpdate={onUpdate}
             />
-          </div>
-        </div>
+        </ModalShell>
       )}
 
       {/* =========================
@@ -104,29 +71,14 @@ export default function StudentModals({
       ========================= */}
 
       {isEditManyOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={onCloseEditMany}
-        >
-          <div
-            className="relative w-[600px] rounded-xl bg-white p-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={onCloseEditMany}
-              className="absolute right-4 top-3 z-10 text-2xl text-gray-500 hover:text-red-500"
-            >
-              ×
-            </button>
-
+        <ModalShell title="Cập nhật hàng loạt" description={`Áp dụng thay đổi cho ${selectedIds.length} học viên đã chọn.`} onClose={onCloseEditMany}>
             <EditManyStudent
               selectedIds={selectedIds}
               students={students}
               onClose={onCloseEditMany}
               onUpdate={onUpdate}
             />
-          </div>
-        </div>
+        </ModalShell>
       )}
     </>
   );

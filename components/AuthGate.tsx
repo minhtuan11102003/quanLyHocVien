@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { useLayoutEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -35,14 +36,25 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     }
     const nativeFetch = window.fetch.bind(window);
     window.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
-      const target = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-      if (!target.includes("localhost:3001") || !session.token) return nativeFetch(input, init);
-      const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
-      if (!headers.has("Authorization")) headers.set("Authorization", `Bearer ${session.token}`);
+      const target =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      if (!target.includes("localhost:3001") || !session.token)
+        return nativeFetch(input, init);
+      const headers = new Headers(
+        init?.headers || (input instanceof Request ? input.headers : undefined),
+      );
+      if (!headers.has("Authorization"))
+        headers.set("Authorization", `Bearer ${session.token}`);
       return nativeFetch(input, { ...init, headers });
     }) as typeof window.fetch;
     setReady(true);
-    return () => { window.fetch = nativeFetch; };
+    return () => {
+      window.fetch = nativeFetch;
+    };
   }, [path, router]);
   if (!ready)
     return (

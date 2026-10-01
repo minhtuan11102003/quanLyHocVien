@@ -23,17 +23,17 @@ export default function RankApprovalTabs({
   onChange: (status: ApprovalStatus) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2 rounded-xl border bg-white p-2 shadow-sm">
+    <div className="flex flex-wrap gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           type="button"
           onClick={() => onChange(tab.key)}
-          className={`rounded-lg px-4 py-2 font-medium transition ${active === tab.key ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-blue-50"}`}
+          className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${active === tab.key ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-blue-50 hover:text-blue-700"}`}
         >
           {tab.label}{" "}
           <span
-            className={`ml-1 rounded-full px-2 py-0.5 text-xs ${active === tab.key ? "bg-white/20" : "bg-gray-100"}`}
+            className={`ml-1 rounded-full px-2 py-0.5 text-xs ${active === tab.key ? "bg-white/20" : "bg-slate-100"}`}
           >
             {counts[tab.key]}
           </span>

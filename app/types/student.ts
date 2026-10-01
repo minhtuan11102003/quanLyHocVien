@@ -87,6 +87,7 @@ export type ClassItem = {
   id: string;
   majorId: string;
   name: string;
+  daiDoiId?: string;
 };
 
 export type QuanKhu = {

@@ -7,6 +7,7 @@ import type {
   QuanKhu,
 } from "@/app/types/student";
 type Unit = { id: string; name: string; type: string; source: string };
+type UnitRecord = { id: string; nameSuDoan?: string; nameLuDoan?: string };
 export default function GraduatedStudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -38,15 +39,15 @@ export default function GraduatedStudentsPage() {
         setMajors(d);
         setRegions(e);
         setUnits([
-          ...f.map((x: any) => ({
+          ...(f as UnitRecord[]).map((x) => ({
             id: x.id,
-            name: x.nameSuDoan,
+            name: x.nameSuDoan || "",
             type: "Sư đoàn",
             source: "suDoan",
           })),
-          ...g.map((x: any) => ({
+          ...(g as UnitRecord[]).map((x) => ({
             id: x.id,
-            name: x.nameLuDoan,
+            name: x.nameLuDoan || "",
             type: "Lữ đoàn",
             source: "luDoan",
           })),

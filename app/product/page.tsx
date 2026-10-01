@@ -1,41 +1,24 @@
 "use client";
-import { useState, useEffect } from "react";
-
-type Student = {
-  id: string;
-  maSoHV: number;
-  name: string;
-  majorId: number;
-  classId: number;
-  donVi: string;
-  chucVu: string;
-  // id: "gaueDaQczVk";
-  // maSoHV: 101100143;
-  // name: "Nguyễn Xuân Minh Tuân";
-  // majorId: 1;
-  // classId: 2;
-  // donVi: "Đại đội 4";
-  // chucVu: "Học viên";
-};
-
-type major = {
-  majorId: number;
-  name: string;
-  shortName: string;
-  //     "id": 1,
-  //     "name": "Nhân viên quân y đại đội",
-  //     "shortName": "NVQYcK43"
-};
-
-type classes = {
-  id: number;
-  majorId: number;
-  name: string;
-  // "id": 1,
-  // "majorId": 1,
-  // "name": "A3"
-};
 
 export default function ProductPage() {
-  return <div>đây là product</div>;
+  return (
+    <div className="min-h-screen bg-slate-100 p-4 md:p-6">
+      <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <div className="inline-flex rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
+          Nội bộ
+        </div>
+        <h1 className="mt-4 text-3xl font-black text-slate-900">
+          Trang sản phẩm nội bộ
+        </h1>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          Mục này đang được chuẩn hóa theo giao diện chính của hệ thống quản lý
+          học viên. Khi cần, nội dung sẽ được cập nhật theo module đang phát
+          triển.
+        </p>
+        <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+          Đang phát triển · Chờ bổ sung tính năng hoặc nội dung chuyên biệt.
+        </div>
+      </div>
+    </div>
+  );
 }

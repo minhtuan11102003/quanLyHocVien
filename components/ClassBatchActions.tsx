@@ -12,6 +12,7 @@ type Unit = {
   type: string;
   source: "suDoan" | "luDoan";
 };
+type UnitRecord = { id: string; nameSuDoan?: string; nameLuDoan?: string; idQuanKhu: string };
 type Props = {
   mode: "rank" | "graduation";
   students: Student[];
@@ -59,19 +60,19 @@ export default function ClassBatchActions({
         setRanks(a);
         setRegions(b);
         setUnits([
-          ...c.map((x: any) => ({
+          ...(c as UnitRecord[]).map((x) => ({
             id: x.id,
-            name: x.nameSuDoan,
+            name: x.nameSuDoan || "",
             parentId: x.idQuanKhu,
             type: "Sư đoàn",
-            source: "suDoan",
+            source: "suDoan" as const,
           })),
-          ...d.map((x: any) => ({
+          ...(d as UnitRecord[]).map((x) => ({
             id: x.id,
-            name: x.nameLuDoan,
+            name: x.nameLuDoan || "",
             parentId: x.idQuanKhu,
             type: "Lữ đoàn",
-            source: "luDoan",
+            source: "luDoan" as const,
           })),
         ]);
       })

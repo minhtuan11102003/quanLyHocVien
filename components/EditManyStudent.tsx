@@ -230,26 +230,19 @@ export default function EditManyStudent({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-[700px] max-h-[90vh] overflow-y-auto rounded-lg bg-white p-6 shadow-lg">
+      <div className="space-y-6">
         {/* ========================= */}
         {/* HEADER */}
         {/* ========================= */}
 
-        <div className="mb-6">
-          <h2 className="text-xl font-bold">Chỉnh sửa học viên</h2>
-
-          <p className="mt-1 text-sm text-gray-500">
-            Đang chọn {selectedStudents.length} học viên
-          </p>
-        </div>
+        <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">Các trường để trống sẽ được giữ nguyên. Thay đổi sẽ áp dụng cho <strong>{selectedStudents.length}</strong> học viên đã chọn.</div>
 
         {/* ========================= */}
         {/* DANH SÁCH HỌC VIÊN */}
         {/* ========================= */}
 
-        <div className="mb-6 rounded-md border">
-          <div className="border-b bg-gray-100 p-3 font-semibold">
+        <div className="rounded-2xl border border-slate-200">
+          <div className="border-b border-slate-100 bg-slate-50 p-4 font-semibold text-slate-800">
             Học viên được chọn
           </div>
 
@@ -266,8 +259,8 @@ export default function EditManyStudent({
               );
 
               return (
-                <div key={student.id} className="border-b p-3 last:border-b-0">
-                  <div className="font-medium">{student.name}</div>
+                <div key={student.id} className="border-b border-slate-100 p-3 last:border-b-0">
+                  <div className="font-semibold text-slate-900">{student.name}</div>
 
                   <div className="mt-1 text-sm text-gray-500">
                     Mã số: {student.maSoHV}
@@ -449,12 +442,12 @@ export default function EditManyStudent({
         {/* BUTTON */}
         {/* ========================= */}
 
-        <div className="flex justify-end gap-3">
+        <div className="sticky bottom-0 flex justify-end gap-3 border-t border-slate-100 bg-white/95 pt-5 backdrop-blur">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-md border px-4 py-2 hover:bg-gray-100 disabled:opacity-50"
+            className="rounded-xl border border-slate-200 px-5 py-2.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
             Hủy
           </button>
@@ -463,12 +456,11 @@ export default function EditManyStudent({
             type="button"
             onClick={handleUpdate}
             disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "Đang cập nhật..." : "Lưu thay đổi"}
           </button>
         </div>
       </div>
-    </div>
   );
 }

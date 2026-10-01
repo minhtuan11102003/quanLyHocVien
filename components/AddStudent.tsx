@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import StudentProfileExtraFields from "@/components/StudentProfileExtraFields";
-import { emptyStudentProfileExtra, type StudentProfileExtra } from "@/app/types/student";
+import {
+  emptyStudentProfileExtra,
+  type StudentProfileExtra,
+} from "@/app/types/student";
 
 type Major = {
   id: string;
@@ -15,6 +18,7 @@ type ClassItem = {
   id: string;
   majorId: number | string;
   name: string;
+  daiDoiId?: string;
 };
 
 type QuanKhu = {
@@ -41,6 +45,8 @@ type FormData = StudentProfileExtra & {
 };
 
 type Rank = { id: string; name: string; rankOrder: number };
+type Company = { id: string; idTieuDoan: string; nameDaiDoi: string };
+type NamedUnit = { id: string; idQuanKhu: string; nameSuDoan?: string; nameLuDoan?: string };
 
 type AddStudentProps = {
   onClose: () => void;
@@ -51,10 +57,24 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [ranks, setRanks] = useState<Rank[]>([]);
   const [quanKhu, setQuankhu] = useState<QuanKhu[]>([]);
-  const [subUnits, setSubUnits] = useState<{ id: string; name: string; parentId: string; type: string; source: string }[]>([]);
-  const [tieuDoan, setTieuDoan] = useState<{id:string;nameTieuDoan:string}[]>([]);
-  const [daiDoi, setDaiDoi] = useState<{id:string;nameDaiDoi:string;idTieuDoan:string}[]>([]);
-  const [chucVuList, setChucVuList] = useState<{id:string;name:string}[]>([]);
+  const [subUnits, setSubUnits] = useState<
+    {
+      id: string;
+      name: string;
+      parentId: string;
+      type: string;
+      source: string;
+    }[]
+  >([]);
+  const [tieuDoan, setTieuDoan] = useState<
+    { id: string; nameTieuDoan: string }[]
+  >([]);
+  const [daiDoi, setDaiDoi] = useState<
+    { id: string; nameDaiDoi: string; idTieuDoan: string }[]
+  >([]);
+  const [chucVuList, setChucVuList] = useState<{ id: string; name: string }[]>(
+    [],
+  );
 
   const [form, setForm] = useState<FormData>({
     maSoHV: "",
@@ -76,7 +96,17 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [majorRes, classRes, rankRes, quanKhuRes, suDoanRes, luDoanRes, tdRes, ddRes, cvRes] = await Promise.all([
+        const [
+          majorRes,
+          classRes,
+          rankRes,
+          quanKhuRes,
+          suDoanRes,
+          luDoanRes,
+          tdRes,
+          ddRes,
+          cvRes,
+        ] = await Promise.all([
           fetch("http://localhost:3001/majors"),
           fetch("http://localhost:3001/classes"),
           fetch("http://localhost:3001/ranks"),
@@ -101,12 +131,45 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
         let tdData = tdRes.ok ? await tdRes.json() : [];
         const ddData = ddRes.ok ? await ddRes.json() : [];
         const cvData = cvRes.ok ? await cvRes.json() : [];
-        if (!Array.isArray(tdData) || !tdData.length) { const ids = [...new Set((Array.isArray(ddData) ? ddData : []).map((x: any) => String(x.idTieuDoan)))]; tdData = ids.map((id, index) => ({ id, nameTieuDoan: `Tiểu đoàn ${index + 1}` })); }
-        setTieuDoan(Array.isArray(tdData) ? tdData : []); setDaiDoi(Array.isArray(ddData) ? ddData : []); setChucVuList(Array.isArray(cvData) && cvData.length ? cvData : [{id:"default_hoc_vien",name:"Học viên"},{id:"default_lop_truong",name:"Lớp trưởng"}]);
+        if (!Array.isArray(tdData) || !tdData.length) {
+          const ids = [
+            ...new Set(
+              (Array.isArray(ddData) ? ddData as Company[] : []).map((x) =>
+                String(x.idTieuDoan),
+              ),
+            ),
+          ];
+          tdData = ids.map((id, index) => ({
+            id,
+            nameTieuDoan: `Tiểu đoàn ${index + 1}`,
+          }));
+        }
+        setTieuDoan(Array.isArray(tdData) ? tdData : []);
+        setDaiDoi(Array.isArray(ddData) ? ddData : []);
+        setChucVuList(
+          Array.isArray(cvData) && cvData.length
+            ? cvData
+            : [
+                { id: "default_hoc_vien", name: "Học viên" },
+                { id: "default_lop_truong", name: "Lớp trưởng" },
+              ],
+        );
         setQuankhu(quanKhuData);
         setSubUnits([
-          ...suDoanData.map((x: any) => ({ id: x.id, name: x.nameSuDoan, parentId: x.idQuanKhu, type: "Sư đoàn", source: "suDoan" })),
-          ...luDoanData.map((x: any) => ({ id: x.id, name: x.nameLuDoan, parentId: x.idQuanKhu, type: "Lữ đoàn", source: "luDoan" })),
+          ...(suDoanData as NamedUnit[]).map((x) => ({
+            id: x.id,
+            name: x.nameSuDoan || "Chưa đặt tên",
+            parentId: x.idQuanKhu,
+            type: "Sư đoàn",
+            source: "suDoan",
+          })),
+          ...(luDoanData as NamedUnit[]).map((x) => ({
+            id: x.id,
+            name: x.nameLuDoan || "Chưa đặt tên",
+            parentId: x.idQuanKhu,
+            type: "Lữ đoàn",
+            source: "luDoan",
+          })),
         ]);
 
         setMajors(majorData);
@@ -122,13 +185,43 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
 
   // Lọc lớp theo ngành
   const filteredClasses = classes.filter(
-    (item) => String(item.majorId) === String(form.majorId),
+    (item) => String(item.majorId) === String(form.majorId) && String(item.daiDoiId || "") === String(form.daiDoiId),
+  );
+  const availableMajors = majors.filter((major) =>
+    classes.some((item) => String(item.majorId) === String(major.id) && String(item.daiDoiId || "") === String(form.daiDoiId)),
   );
 
-  const filteredSubUnits = subUnits.filter((item) => item.parentId === form.quanKhuId);
-  const filteredDaiDoi = daiDoi.filter((item) => String(item.idTieuDoan) === String(form.tieuDoanId));
+  const filteredSubUnits = subUnits.filter(
+    (item) => item.parentId === form.quanKhuId,
+  );
+  const filteredDaiDoi = daiDoi.filter(
+    (item) => String(item.idTieuDoan) === String(form.tieuDoanId),
+  );
 
-  const handleExtraChange = (name: keyof StudentProfileExtra, value: string) => {
+  const isSelectedClassValid =
+    !form.majorId || !form.classId
+      ? true
+      : classes.some(
+          (item) =>
+            String(item.id) === String(form.classId) &&
+            String(item.majorId) === String(form.majorId) &&
+            String(item.daiDoiId || "") === String(form.daiDoiId),
+        );
+
+  const isSelectedSubUnitValid =
+    !form.quanKhuId || !form.donViCap2Id
+      ? true
+      : subUnits.some(
+          (item) =>
+            (`${item.source}:${item.id}` === form.donViCap2Id ||
+              String(item.id) === String(form.donViCap2Id)) &&
+            String(item.parentId) === String(form.quanKhuId),
+        );
+
+  const handleExtraChange = (
+    name: keyof StudentProfileExtra,
+    value: string,
+  ) => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -164,15 +257,48 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
       !form.name ||
       !form.majorId ||
       !form.classId ||
-      !form.daiDoiId ||
       !form.chucVu ||
       !form.danToc ||
       !form.birthDay ||
       !form.capBac ||
       !form.quanKhuId ||
-      !form.donViCap2Id
+      !form.donViCap2Id ||
+      !form.tieuDoanId ||
+      !form.daiDoiId
     ) {
-      alert("Vui lòng nhập đầy đủ thông tin");
+      alert(
+        "Vui lòng nhập đầy đủ thông tin và chọn đầy đủ các mốc liên kết (ngành, lớp, quân khu, đơn vị, tiểu đoàn, đại đội)",
+      );
+      return;
+    }
+
+    if (!isSelectedClassValid) {
+      alert(
+        "Lớp học không thuộc ngành đào tạo đã chọn. Vui lòng chọn lại lớp phù hợp.",
+      );
+      return;
+    }
+
+    if (!isSelectedSubUnitValid) {
+      alert(
+        "Đơn vị cấp 2 không thuộc quân khu đã chọn. Vui lòng chọn lại đơn vị phù hợp.",
+      );
+      return;
+    }
+
+    const selectedDaiDoi = daiDoi.find(
+      (item) => String(item.id) === String(form.daiDoiId),
+    );
+
+    if (!selectedDaiDoi) {
+      alert("Đại đội không hợp lệ. Vui lòng chọn lại đại đội.");
+      return;
+    }
+
+    if (String(selectedDaiDoi.idTieuDoan) !== String(form.tieuDoanId)) {
+      alert(
+        "Đại đội không thuộc tiểu đoàn đã chọn. Vui lòng chọn đúng liên kết.",
+      );
       return;
     }
 
@@ -188,7 +314,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
 
         classId: form.classId,
 
-        donVi: daiDoi.find((x) => x.id === form.daiDoiId)?.nameDaiDoi || "",
+        donVi: selectedDaiDoi.nameDaiDoi,
         chucVu: form.chucVu,
         danToc: form.danToc,
         birthDay: form.birthDay,
@@ -210,7 +336,8 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
       });
 
       if (!res.ok) {
-        throw new Error("Thêm học viên thất bại");
+        const errorText = await res.text();
+        throw new Error(errorText || "Thêm học viên thất bại");
       }
 
       alert("Thêm học viên thành công");
@@ -218,19 +345,21 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
       onClose();
     } catch (error) {
       console.error("Lỗi:", error);
-      alert("Có lỗi xảy ra khi thêm học viên");
+      alert(
+        "Có lỗi xảy ra khi thêm học viên. Vui lòng kiểm tra đầy đủ liên kết dữ liệu.",
+      );
     }
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="h-[800px] overflow-y-auto pr-2 space-y-5"
+      className="student-form flex flex-col gap-6"
     >
-      <h2 className="text-2xl font-bold">Thêm học viên</h2>
+      <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 text-sm text-blue-900">Hoàn thành theo thứ tự: ngành – lớp, quân khu – đơn vị, rồi tiểu đoàn – đại đội. Các lựa chọn phía sau sẽ tự lọc theo lựa chọn trước.</div>
       {/* Mã số học viên */}
       <div>
-        <label className="mb-2 block font-semibold">Mã số học viên</label>
+        <label className="field-label">Mã số học viên</label>
 
         <input
           type="text"
@@ -238,12 +367,12 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
           value={form.maSoHV}
           onChange={handleChange}
           placeholder="Nhập mã số học viên"
-          className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         />
       </div>
       {/* Tên học viên */}
       <div>
-        <label className="mb-2 block font-semibold">Tên học viên</label>
+        <label className="field-label">Tên học viên</label>
 
         <input
           type="text"
@@ -251,87 +380,127 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
           value={form.name}
           onChange={handleChange}
           placeholder="Nhập tên học viên"
-          className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         />
       </div>
-      {/* Ngành đào tạo */}
       <div>
-        <label className="mb-2 block font-semibold">Ngành đào tạo</label>
-
+        <label className="field-label">Quân khu</label>
         <select
-          name="majorId"
-          value={form.majorId}
-          onChange={handleMajorChange}
-          className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
+          name="quanKhuId"
+          value={form.quanKhuId}
+          onChange={(e) =>
+            setForm((prev) => ({
+              ...prev,
+              quanKhuId: e.target.value,
+              donViCap2Id: "",
+            }))
+          }
+          className="field-control"
         >
-          <option value="">-- Chọn ngành đào tạo --</option>
-
-          {majors.map((major) => (
-            <option key={major.id} value={major.id}>{major.name}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Lớp học */}
-      <div>
-        <label className="mb-2 block font-semibold">Lớp học</label>
-
-        <select
-          name="classId"
-          value={form.classId}
-          onChange={handleChange}
-          disabled={!form.majorId}
-          className="w-full rounded-lg border px-4 py-3 outline-none disabled:bg-gray-100 focus:border-blue-500"
-        >
-          <option value="">
-            {!form.majorId
-              ? "-- Vui lòng chọn ngành trước --"
-              : "-- Chọn lớp học --"}
-          </option>
-
-          {filteredClasses.map((item) => (
+          <option value="">-- Chọn quân khu --</option>
+          {quanKhu.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.name}
+              {item.nameQuanKhu}
             </option>
           ))}
         </select>
       </div>
-
       <div>
-        <label className="mb-2 block font-semibold">Quân khu</label>
-        <select name="quanKhuId" value={form.quanKhuId} onChange={(e) => setForm((prev) => ({ ...prev, quanKhuId: e.target.value, donViCap2Id: "" }))} className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500">
-          <option value="">-- Chọn quân khu --</option>
-          {quanKhu.map((item) => <option key={item.id} value={item.id}>{item.nameQuanKhu}</option>)}
-        </select>
-      </div>
-      <div>
-        <label className="mb-2 block font-semibold">Sư đoàn/Lữ đoàn</label>
-        <select name="donViCap2Id" value={form.donViCap2Id} onChange={handleChange} disabled={!form.quanKhuId} className="w-full rounded-lg border px-4 py-3 outline-none disabled:bg-gray-100 focus:border-blue-500">
-          <option value="">{form.quanKhuId ? "-- Chọn đơn vị --" : "-- Chọn quân khu trước --"}</option>
-          {filteredSubUnits.map((item) => <option key={`${item.source}:${item.id}`} value={`${item.source}:${item.id}`}>{item.type} {item.name}</option>)}
+        <label className="field-label">Sư đoàn/Lữ đoàn</label>
+        <select
+          name="donViCap2Id"
+          value={form.donViCap2Id}
+          onChange={handleChange}
+          disabled={!form.quanKhuId}
+          className="field-control disabled:bg-slate-100 disabled:text-slate-400"
+        >
+          <option value="">
+            {form.quanKhuId ? "-- Chọn đơn vị --" : "-- Chọn quân khu trước --"}
+          </option>
+          {filteredSubUnits.map((item) => (
+            <option
+              key={`${item.source}:${item.id}`}
+              value={`${item.source}:${item.id}`}
+            >
+              {item.type} {item.name}
+            </option>
+          ))}
         </select>
       </div>
       {/* TIỂU ĐOÀN / ĐẠI ĐỘI */}
-      <div><label className="mb-2 block font-semibold">Tiểu đoàn</label><select value={form.tieuDoanId} onChange={(e) => setForm((p) => ({ ...p, tieuDoanId: e.target.value, daiDoiId: "" }))} className="w-full rounded-lg border px-4 py-3"><option value="">-- Chọn Tiểu đoàn --</option>{tieuDoan.map((x) => <option key={x.id} value={x.id}>{x.nameTieuDoan}</option>)}</select></div>
-      <div><label className="mb-2 block font-semibold">Đại đội quản lý lớp</label><select value={form.daiDoiId} onChange={(e) => setForm((p) => ({ ...p, daiDoiId: e.target.value }))} disabled={!form.tieuDoanId} className="w-full rounded-lg border px-4 py-3 disabled:bg-gray-100"><option value="">{form.tieuDoanId ? "-- Chọn Đại đội --" : "-- Chọn Tiểu đoàn trước --"}</option>{filteredDaiDoi.map((x) => <option key={x.id} value={x.id}>{x.nameDaiDoi}</option>)}</select></div>
+      <div>
+        <label className="field-label">Tiểu đoàn</label>
+        <select
+          value={form.tieuDoanId}
+          onChange={(e) =>
+            setForm((p) => ({ ...p, tieuDoanId: e.target.value, daiDoiId: "" }))
+          }
+          className="field-control"
+        >
+          <option value="">-- Chọn Tiểu đoàn --</option>
+          {tieuDoan.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.nameTieuDoan}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="field-label">Đại đội quản lý lớp</label>
+        <select
+          value={form.daiDoiId}
+          onChange={(e) => setForm((p) => ({ ...p, daiDoiId: e.target.value, majorId: "", classId: "" }))}
+          disabled={!form.tieuDoanId}
+          className="field-control disabled:bg-slate-100 disabled:text-slate-400"
+        >
+          <option value="">
+            {form.tieuDoanId
+              ? "-- Chọn Đại đội --"
+              : "-- Chọn Tiểu đoàn trước --"}
+          </option>
+          {filteredDaiDoi.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.nameDaiDoi}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="field-label">Chuyên ngành</label>
+        <select name="majorId" value={form.majorId} onChange={handleMajorChange} disabled={!form.daiDoiId} className="field-control disabled:bg-slate-100 disabled:text-slate-400">
+          <option value="">{form.daiDoiId ? "-- Chọn chuyên ngành --" : "-- Chọn Đại đội trước --"}</option>
+          {availableMajors.map((major) => <option key={major.id} value={major.id}>{major.name}</option>)}
+        </select>
+      </div>
+      <div>
+        <label className="field-label">Lớp học</label>
+        <select name="classId" value={form.classId} onChange={handleChange} disabled={!form.majorId} className="field-control disabled:bg-slate-100 disabled:text-slate-400">
+          <option value="">{form.majorId ? "-- Chọn lớp học --" : "-- Chọn chuyên ngành trước --"}</option>
+          {filteredClasses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>
+      </div>
       {/* Chức vụ */}
       <div>
-        <label className="mb-2 block font-semibold">Chức vụ</label>
+        <label className="field-label">Chức vụ</label>
 
         <select
           name="chucVu"
           value={form.chucVu}
           onChange={handleChange}
-          className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         >
           <option value="">-- Chọn chức vụ --</option>
-          {chucVuList.map((x) => <option key={x.id} value={x.name}>{x.name}</option>)}
+          {chucVuList.map((x) => (
+            <option key={x.id} value={x.name}>
+              {x.name}
+            </option>
+          ))}
         </select>
       </div>
 
       {/* Dân tộc */}
       <div>
-        <label className="mb-2 block font-semibold">Dân tộc</label>
+        <label className="field-label">Dân tộc</label>
 
         <input
           type="text"
@@ -339,31 +508,31 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
           value={form.danToc}
           onChange={handleChange}
           placeholder="Nhập dân tộc"
-          className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         />
       </div>
       {/* Ngày sinh */}
       <div>
-        <label className="mb-2 block font-semibold">Ngày sinh</label>
+        <label className="field-label">Ngày sinh</label>
 
         <input
           type="date"
           name="birthDay"
           value={form.birthDay}
           onChange={handleChange}
-          className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         />
       </div>
       {/* Cấp bậc */}
 
       <div>
-        <label className="mb-2 block font-semibold">Cấp bậc</label>
+        <label className="field-label">Cấp bậc</label>
 
         <select
           name="capBac"
           value={form.capBac}
           onChange={handleChange}
-          className="w-full rounded-lg border px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         >
           <option value="">-- Chọn cấp bậc --</option>
           {[...ranks]
@@ -375,19 +544,16 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
             ))}
         </select>
       </div>
-      <StudentProfileExtraFields
-        value={form}
-        onChange={handleExtraChange}
-      />
+      <StudentProfileExtraFields value={form} onChange={handleExtraChange} />
       {/* Button */}
-      <div className="flex justify-end gap-3 pt-3">
+      <div className="sticky bottom-0 -mx-1 flex justify-end gap-3 border-t border-slate-100 bg-white/95 px-1 pt-5 backdrop-blur">
         <Button type="button" variant="outline" onClick={onClose}>
           Hủy
         </Button>
 
         <Button
           type="submit"
-          className="bg-blue-500 text-white hover:bg-blue-600"
+          className="rounded-xl bg-blue-600 px-5 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700"
         >
           Thêm học viên
         </Button>

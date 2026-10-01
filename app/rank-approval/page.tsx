@@ -238,34 +238,34 @@ export default function RankApprovalPage() {
   };
 
   return (
-    <div className="p-4">
-      <div className="mb-5 flex items-center justify-between">
+    <div className="page-shell">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Phê duyệt nâng cấp bậc</h1>
-          <p className="mt-1 text-gray-500">
+          <p className="mb-1 text-xs font-bold uppercase tracking-[.18em] text-blue-600">Quy trình xét duyệt</p><h1 className="text-2xl font-bold tracking-tight text-slate-900">Phê duyệt nâng cấp bậc</h1>
+          <p className="mt-1 text-sm text-slate-500">
             Quy trình xét duyệt HSQ, binh sĩ và học viên
           </p>
         </div>
         {canCreateRequest && <button
           onClick={() => setShowCreate(true)}
-          className="rounded-lg bg-blue-600 px-4 py-3 text-white"
+          className="rounded-xl bg-blue-600 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-blue-700"
         >
           + Lập hồ sơ
         </button>}
       </div>
-      <div className="mb-3 rounded-lg bg-blue-50 p-3 text-sm text-blue-900">{session?.role === "company" ? "Đại đội: hồ sơ của bạn sẽ chờ Tiểu đoàn chuyển lên Nhà trường." : session?.role === "battalion" ? "Tiểu đoàn: chỉ hiển thị hồ sơ chờ chuyển lên Nhà trường; không có quyền phê duyệt." : session?.role === "school" ? "Nhà trường: đây là cấp phê duyệt cuối cùng." : "Admin: có thể xem và xử lý toàn bộ luồng."}</div>
+      <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">{session?.role === "company" ? "Đại đội: hồ sơ của bạn sẽ chờ Tiểu đoàn chuyển lên Nhà trường." : session?.role === "battalion" ? "Tiểu đoàn: chỉ hiển thị hồ sơ chờ chuyển lên Nhà trường; không có quyền phê duyệt." : session?.role === "school" ? "Nhà trường: đây là cấp phê duyệt cuối cùng." : "Admin: có thể xem và xử lý toàn bộ luồng."}</div>
       <RankApprovalTabs active={status} counts={counts} onChange={setStatus} />
-      <div className="my-4 flex flex-wrap gap-3 rounded-xl border bg-white p-4">
+      <div className="my-4 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Tìm học viên hoặc mã số..."
-          className="min-w-60 flex-1 rounded-lg border px-3 py-2"
+          className="field-control min-w-60 flex-1"
         />
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="rounded-lg border px-3 py-2"
+          className="field-control w-auto min-w-[180px]"
         >
           <option value="all">Tất cả đối tượng</option>
           {categories.map((c) => (
@@ -274,14 +274,14 @@ export default function RankApprovalPage() {
         </select>
         <button
           onClick={() => setSelectedIds(visible.map((item) => item.id))}
-          className="rounded-lg border px-3 py-2"
+          className="field-control w-auto min-w-[180px]"
         >
           Chọn tất cả
         </button>
         {status === "pending" && (
           <button
             onClick={approveBulk}
-            className="rounded-lg bg-green-600 px-3 py-2 text-white"
+            className="rounded-xl bg-emerald-600 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
           >
             {session?.role === "battalion" ? "Gửi Nhà trường" : "Phê duyệt cuối"} ({visibleSelected.length})
           </button>
@@ -289,17 +289,17 @@ export default function RankApprovalPage() {
         {status === "approved" && (
           <button
             onClick={exportBulk}
-            className="rounded-lg bg-indigo-600 px-3 py-2 text-white"
+            className="rounded-xl bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
           >
             Xuất quyết định ({visibleSelected.length})
           </button>
         )}
       </div>
-      <div className="max-h-[calc(100vh-230px)] overflow-auto rounded-xl border bg-white">
+      <div className="table-shell max-h-[calc(100vh-280px)]">
         <table className="min-w-[900px] w-full">
-          <thead className="bg-gray-100">
+          <thead>
             <tr>
-              <th className="p-3 text-left">
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                 <input
                   type="checkbox"
                   checked={
@@ -315,38 +315,38 @@ export default function RankApprovalPage() {
                   }
                 />
               </th>
-              <th className="p-3 text-left">Học viên</th>
-              <th className="p-3 text-left">Đối tượng</th>
-              <th className="p-3 text-left">Cấp bậc</th>
-              <th className="p-3 text-left">Ngày gửi</th>
-              <th className="p-3 text-left">Thao tác</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Học viên</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Đối tượng</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Cấp bậc</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Ngày gửi</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {visible.map((item) => (
-              <tr key={item.id} className="border-t">
-                <td className="p-3">
+              <tr key={item.id} className="transition hover:bg-slate-50">
+                <td className="p-3 text-sm text-slate-700">
                   <input
                     type="checkbox"
                     checked={selectedIds.includes(item.id)}
                     onChange={() => toggleSelected(item.id)}
                   />
                 </td>
-                <td className="p-3">
+                <td className="p-3 text-sm text-slate-700">
                   {item.studentName}
                   <div className="text-xs text-gray-500">{item.maSoHV}</div>
                 </td>
-                <td className="p-3">{item.category}</td>
-                <td className="p-3">
+                <td className="p-3 text-sm text-slate-700">{item.category}</td>
+                <td className="p-3 text-sm text-slate-700">
                   {item.currentRank} → {item.proposedRank}
                 </td>
-                <td className="p-3">
+                <td className="p-3 text-sm text-slate-700">
                   {new Date(item.submittedAt).toLocaleDateString("vi-VN")}
                 </td>
-                <td className="p-3">
+                <td className="p-3 text-sm text-slate-700">
                   <button
                     onClick={() => setSelected(item)}
-                    className="rounded bg-gray-700 px-3 py-1.5 text-white"
+                    className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-slate-800"
                   >
                     Xem / xử lý
                   </button>
@@ -450,7 +450,7 @@ function Modal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl rounded-xl bg-white shadow-2xl"
+        className="max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-3xl border border-slate-200 bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {children}

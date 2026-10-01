@@ -11,6 +11,7 @@ type Props = {
   onClose: () => void;
 };
 type Unit = { id: string; name: string; parentId: string; type: string; source: string };
+type UnitRecord = { id: string; nameSuDoan?: string; nameLuDoan?: string; idQuanKhu: string };
 type Row = { label: string; value?: unknown; wide?: boolean };
 type Section = { title: string; description: string; rows: Row[] };
 
@@ -39,8 +40,8 @@ export default function StudentDetail({ student, majors, classes, quanKhu = [], 
         setBattalions(Array.isArray(tdData) ? tdData : []);
         setCompanies(Array.isArray(ddData) ? ddData : []);
         setUnits([
-          ...(Array.isArray(sdData) ? sdData : []).map((x: any) => ({ id: x.id, name: x.nameSuDoan, parentId: x.idQuanKhu, type: "Sư đoàn", source: "suDoan" })),
-          ...(Array.isArray(ldData) ? ldData : []).map((x: any) => ({ id: x.id, name: x.nameLuDoan, parentId: x.idQuanKhu, type: "Lữ đoàn", source: "luDoan" })),
+          ...((Array.isArray(sdData) ? sdData : []) as UnitRecord[]).map((x) => ({ id: x.id, name: x.nameSuDoan || "", parentId: x.idQuanKhu, type: "Sư đoàn", source: "suDoan" })),
+          ...((Array.isArray(ldData) ? ldData : []) as UnitRecord[]).map((x) => ({ id: x.id, name: x.nameLuDoan || "", parentId: x.idQuanKhu, type: "Lữ đoàn", source: "luDoan" })),
         ]);
       })
       .catch(console.error)

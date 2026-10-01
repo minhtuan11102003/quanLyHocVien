@@ -9,6 +9,7 @@ import StudentTable from "@/components/StudentTable";
 import StudentPagination from "@/components/StudentPagination";
 import StudentModals from "@/components/StudentModals";
 import StudentDetail from "@/components/StudentDetail";
+import { ModalShell } from "@/components/ui/modal-shell";
 
 import type {
   Student,
@@ -17,6 +18,8 @@ import type {
   PaginationItem,
   QuanKhu,
 } from "@/app/types/student";
+
+type NamedUnit = { id: string; nameSuDoan?: string; nameLuDoan?: string };
 
 export default function Home() {
   // =====================================================
@@ -42,6 +45,7 @@ export default function Home() {
 
   const [quanKhu, setQuankhu] = useState<QuanKhu[]>([]);
   const [subUnits, setSubUnits] = useState<{ id: string; name: string; type: string; source: string }[]>([]);
+  const [companies, setCompanies] = useState<{ id: string; nameDaiDoi: string }[]>([]);
 
   // =====================================================
   // STATE SELECT
@@ -60,7 +64,7 @@ export default function Home() {
   // =====================================================
 
   const [selectedDonVi, setSelectedDonVi] = useState<string>("all");
-
+  const [selectedMajorId, setSelectedMajorId] = useState<string | "all">("all");
   const [selectedClassId, setSelectedClassId] = useState<string | "all">("all");
 
   // =====================================================
@@ -77,13 +81,14 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [studentRes, nganhRes, classRes, quanKhuRes, suDoanRes, luDoanRes] = await Promise.all([
+      const [studentRes, nganhRes, classRes, quanKhuRes, suDoanRes, luDoanRes, daiDoiRes] = await Promise.all([
         fetch("http://localhost:3001/students"),
         fetch("http://localhost:3001/majors"),
         fetch("http://localhost:3001/classes"),
         fetch("http://localhost:3001/quanKhu"),
         fetch("http://localhost:3001/suDoan"),
         fetch("http://localhost:3001/luDoan"),
+        fetch("http://localhost:3001/daiDoi"),
       ]);
 
       if (!studentRes.ok || !nganhRes.ok || !classRes.ok) {
@@ -98,8 +103,10 @@ export default function Home() {
       const quanKhuData = await quanKhuRes.json();
       const suDoanData = await suDoanRes.json();
       const luDoanData = await luDoanRes.json();
+      const daiDoiData = daiDoiRes.ok ? await daiDoiRes.json() : [];
+      setCompanies(Array.isArray(daiDoiData) ? daiDoiData : []);
       setQuankhu(quanKhuData);
-      setSubUnits([...suDoanData.map((x: any) => ({ id: x.id, name: x.nameSuDoan, type: "Sư đoàn", source: "suDoan" })), ...luDoanData.map((x: any) => ({ id: x.id, name: x.nameLuDoan, type: "Lữ đoàn", source: "luDoan" }))]);
+      setSubUnits([...(suDoanData as NamedUnit[]).map((x) => ({ id: x.id, name: x.nameSuDoan || "Chưa đặt tên", type: "Sư đoàn", source: "suDoan" })), ...(luDoanData as NamedUnit[]).map((x) => ({ id: x.id, name: x.nameLuDoan || "Chưa đặt tên", type: "Lữ đoàn", source: "luDoan" }))]);
 
       setStudents(studentData);
 
@@ -123,7 +130,11 @@ export default function Home() {
   // FILTER CLASS
   // =====================================================
 
-  const filteredClasses = classes;
+  const filteredClasses = classes.filter((item) => {
+    const byMajor = selectedMajorId === "all" || String(item.majorId) === String(selectedMajorId);
+    const byCompany = selectedDonVi === "all" || String(item.daiDoiId || "") === String(selectedDonVi);
+    return byMajor && byCompany;
+  });
 
   // =====================================================
   // FILTER STUDENT
@@ -141,13 +152,13 @@ export default function Home() {
 
     // Lọc theo đại đội
     const matchDonVi =
-      selectedDonVi === "all" || student.donVi === selectedDonVi;
+      selectedDonVi === "all" || String(student.daiDoiId || "") === String(selectedDonVi);
 
     // Lọc theo lớp
-    const matchClass =
-      selectedClassId === "all" || String(student.classId) === String(selectedClassId);
+    const matchMajor = selectedMajorId === "all" || String(student.majorId) === String(selectedMajorId);
+    const matchClass = selectedClassId === "all" || String(student.classId) === String(selectedClassId);
 
-    return matchSearch && matchDonVi && matchClass;
+    return matchSearch && matchDonVi && matchMajor && matchClass;
   });
 
   // =====================================================
@@ -170,7 +181,7 @@ export default function Home() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedDonVi, selectedClassId, search, itemsPerPage]);
+  }, [selectedDonVi, selectedMajorId, selectedClassId, search, itemsPerPage]);
 
   // =====================================================
   // KIỂM TRA CURRENT PAGE
@@ -352,11 +363,20 @@ export default function Home() {
 
     setSelectedDonVi(value);
 
-    // Khi đổi đại đội
-    // -> reset lớp
+    // Khi đổi đại đội, chỉ giữ lại ngành/lớp thuộc đại đội đó.
     setSelectedClassId("all");
 
     // Reset page
+    setCurrentPage(1);
+  };
+
+  // =====================================================
+  // CHANGE CHUYÊN NGÀNH
+  // =====================================================
+
+  const handleMajorChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMajorId(e.target.value === "all" ? "all" : e.target.value);
+    setSelectedClassId("all");
     setCurrentPage(1);
   };
 
@@ -379,7 +399,7 @@ export default function Home() {
   // =====================================================
 
   return (
-    <div>
+    <div className="page-shell space-y-5">
       {/* =================================================
           HEADER
       ================================================= */}
@@ -398,10 +418,14 @@ export default function Home() {
       <StudentFilter
         search={search}
         selectedDonVi={selectedDonVi}
+        selectedMajorId={selectedMajorId}
         selectedClassId={selectedClassId}
+        majors={nganhDaoTao}
         filteredClasses={filteredClasses}
+        companies={companies}
         onSearchChange={handleSearch}
         onDonViChange={handleDonViChange}
+        onMajorChange={handleMajorChange}
         onClassChange={handleClassChange}
       />
 
@@ -415,7 +439,6 @@ export default function Home() {
         isEditManyOpen={isEditManyOpen}
         selectedIds={selectedIds}
         students={students}
-        quanKhu={quanKhu}
         onCloseAdd={() => setIsOpen(false)}
         onCloseEdit={() => setEditStudent(null)}
         onCloseEditMany={() => setIsEditManyOpen(false)}
@@ -446,7 +469,7 @@ export default function Home() {
           PAGINATION
       ================================================= */}
 
-      <div className="mx-2 mt-2 w-full overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-md">
+      <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-sm">
         <StudentPagination
           currentPage={currentPage}
           totalPages={totalPages}
@@ -458,14 +481,7 @@ export default function Home() {
       </div>
 
       {detailStudent && (
-        <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setDetailStudent(null)}
-        >
-          <div
-            className="w-full max-w-xl rounded-xl bg-white shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
+        <ModalShell title="Chi tiết hồ sơ" onClose={() => setDetailStudent(null)} className="max-w-6xl" showHeader={false}>
             <StudentDetail
               student={detailStudent}
               majors={nganhDaoTao}
@@ -473,8 +489,7 @@ export default function Home() {
               quanKhu={quanKhu}
               onClose={() => setDetailStudent(null)}
             />
-          </div>
-        </div>
+        </ModalShell>
       )}
     </div>
   );

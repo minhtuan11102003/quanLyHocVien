@@ -1,5 +1,7 @@
 "use client";
 
+import { Eye, Pencil, Trash2 } from "lucide-react";
+
 import type {
   ClassItem,
   NganhDaoTao,
@@ -45,8 +47,9 @@ export default function StudentTable({
     students.every((student) => selectedIds.includes(student.id));
 
   return (
-    <div className="mx-4 mt-5 w-[calc(100%-2rem)] min-w-0 max-h-[calc(100vh-280px)] max-w-full overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm sm:mx-6 sm:w-[calc(100%-3rem)]">
-      <table className="w-full min-w-max border-collapse">
+    <div className="mt-5 min-w-0 max-w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 className="font-bold text-slate-900">Danh sách học viên</h2><p className="mt-0.5 text-sm text-slate-500">Chọn một hoặc nhiều hồ sơ để thao tác.</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">{students.length} kết quả</span></div>
+      <div className="max-h-[calc(100vh-330px)] overflow-auto"><table className="w-full min-w-[1080px] border-collapse">
         {/* HEADER */}
 
         <thead className="sticky top-0 z-10 bg-slate-50">
@@ -107,7 +110,7 @@ export default function StudentTable({
               return (
                 <tr
                   key={student.id}
-                  className="border-b transition duration-300 hover:bg-gray-100"
+                  className="border-b border-slate-100 transition hover:bg-blue-50/50"
                 >
                   {/* CHECKBOX */}
 
@@ -126,7 +129,7 @@ export default function StudentTable({
 
                   {/* MÃ */}
 
-                  <td className="px-4 py-4">{student.maSoHV}</td>
+                  <td className="px-4 py-4 font-mono text-xs font-semibold text-slate-600">{student.maSoHV}</td>
 
                   {/* NGÀNH */}
 
@@ -140,7 +143,7 @@ export default function StudentTable({
 
                   {/* TÊN */}
 
-                  <td className="px-6 py-4">{student.name}</td>
+                  <td className="px-6 py-4"><div className="font-semibold text-slate-900">{student.name}</div><div className="mt-0.5 text-xs text-slate-500">{student.chucVu || "Học viên"}</div></td>
 
                   {/* ĐƠN VỊ GỐC */}
                   <td className="px-6 py-4">
@@ -162,41 +165,44 @@ export default function StudentTable({
                   </td>
 
                   {/* CHỨC VỤ */}
-                  <td className="px-6 py-4">{student.capBac}</td>
+                  <td className="px-6 py-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">{student.capBac}</span></td>
                   {/* <td className="px-6 py-4">
                     {new Date(student.birthDay).toLocaleDateString("vi-VN")}
                   </td> */}
 
                   {/* THAO TÁC */}
 
-                  <td className="flex gap-2 px-6 py-4">
+                  <td className="px-6 py-4"><div className="flex gap-1.5">
                     <button
                       onClick={() => onDetail(student)}
-                      className="rounded bg-gray-600 px-4 py-2 font-bold text-white hover:bg-gray-700"
+                      title="Xem chi tiết"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:border-slate-300 hover:bg-slate-100"
                     >
-                      Chi tiết
+                      <Eye size={16} />
                     </button>
 
                     <button
                       onClick={() => onEdit(student)}
-                      className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
+                      title="Chỉnh sửa"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm transition hover:bg-blue-700"
                     >
-                      Sửa
+                      <Pencil size={15} />
                     </button>
 
                     <button
                       onClick={() => onDelete(student.id)}
-                      className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
+                      title="Xóa học viên"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-100 text-red-600 transition hover:bg-red-50"
                     >
-                      Xóa
+                      <Trash2 size={15} />
                     </button>
-                  </td>
+                  </div></td>
                 </tr>
               );
             })
           )}
         </tbody>
-      </table>
+      </table></div>
     </div>
   );
 }

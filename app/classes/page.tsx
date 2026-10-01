@@ -5,6 +5,7 @@ import AddClassComponent from "@/components/AddClass";
 import EditClassComponent from "@/components/EditClass";
 import MajorManagement from "@/components/MajorManagement";
 import { Button } from "@/components/ui/button";
+import { ModalShell } from "@/components/ui/modal-shell";
 import { useEffect, useState } from "react";
 
 type ClassItem = {
@@ -46,6 +47,7 @@ export default function ClassManagement() {
 
   // Ngành đang lọc
   const [selectedMajorId, setSelectedMajorId] = useState<string | "all">("all");
+  const [selectedDaiDoiId, setSelectedDaiDoiId] = useState<string | "all">("all");
 
   // Tìm kiếm
   const [search, setSearch] = useState("");
@@ -101,7 +103,12 @@ export default function ClassManagement() {
     // Lọc theo tên lớp
     const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
 
-    return matchMajor && matchSearch;
+    const matchCompany = selectedDaiDoiId === "all" || String(item.daiDoiId) === String(selectedDaiDoiId);
+    return matchMajor && matchSearch && matchCompany;
+  }).sort((a, b) => {
+    const aName = daiDoi.find((item) => String(item.id) === String(a.daiDoiId))?.nameDaiDoi || "";
+    const bName = daiDoi.find((item) => String(item.id) === String(b.daiDoiId))?.nameDaiDoi || "";
+    return aName.localeCompare(bName, "vi", { numeric: true }) || a.name.localeCompare(b.name, "vi", { numeric: true });
   });
 
   // =========================
@@ -249,6 +256,11 @@ export default function ClassManagement() {
     setCurrentPage(1);
   };
 
+  const handleDaiDoiChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedDaiDoiId(e.target.value === "all" ? "all" : e.target.value);
+    setCurrentPage(1);
+  };
+
   if (tab === "majors") {
     return (
       <div className="p-4">
@@ -273,301 +285,273 @@ export default function ClassManagement() {
   }
 
   return (
-    <div className="p-2">
-      <div className="mb-4 flex gap-2">
-        <button
-          onClick={() => setTab("majors")}
-          className="rounded-lg border px-4 py-2"
-        >
-          Chuyên ngành
-        </button>
-        <button
-          onClick={() => setTab("classes")}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-white"
-        >
-          Lớp học
-        </button>
-      </div>
-      {/* =================================
-          HEADER
-      ================================= */}
-
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Quản lý lớp học</h1>
-
-          <p className="mt-1 text-gray-500">
-            Tổng số lớp:{" "}
-            <span className="font-bold text-blue-600">{classes.length}</span>
-          </p>
+    <div className="min-h-screen bg-slate-100 p-4 md:p-6">
+      <div className="mx-auto max-w-7xl space-y-5">
+        <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-gradient-to-r from-sky-600 to-blue-700 p-5 text-white shadow-lg md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100">
+              Hệ thống đào tạo
+            </p>
+            <h1 className="mt-2 text-2xl font-bold">Quản lý lớp học</h1>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-2 backdrop-blur-sm">
+            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+            <span className="text-sm font-medium text-blue-50">
+              {classes.length} lớp đang quản lý
+            </span>
+          </div>
         </div>
+
         <div className="flex gap-2">
-          <Button
-            className="bg-blue-500 px-5 py-6 text-white hover:bg-blue-600"
-            onClick={() => setIsOpen(true)}
+          <button
+            onClick={() => setTab("majors")}
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
           >
-            + Thêm lớp học
-          </Button>
-        </div>
-      </div>
-
-      {/* =================================
-          FILTER
-      ================================= */}
-
-      <div className="mb-4 flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm">
-        {/* SEARCH */}
-
-        <div className="flex-1">
-          <input
-            type="text"
-            value={search}
-            onChange={handleSearchChange}
-            placeholder="Tìm kiếm tên lớp..."
-            className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
-          />
+            Chuyên ngành
+          </button>
+          <button
+            onClick={() => setTab("classes")}
+            className={`rounded-xl px-4 py-2.5 text-sm font-medium shadow-sm transition ${tab === "classes" ? "bg-blue-600 text-white" : "border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"}`}
+          >
+            Lớp học
+          </button>
         </div>
 
-        {/* MAJOR */}
-
-        <select
-          value={selectedMajorId}
-          onChange={handleMajorChange}
-          className="rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
-        >
-          <option value="all">Tất cả ngành</option>
-
-          {nganhDaoTao.map((major) => (
-            <option key={major.id} value={major.id}>
-              {major.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* =================================
-          MODAL ADD
-      ================================= */}
-
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => setIsOpen(false)}
-        >
-          <div
-            className="relative w-[600px] rounded-xl bg-white p-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setIsOpen(false)}
-              className="absolute right-4 top-3 z-10 text-2xl text-gray-500 hover:text-red-500"
-            >
-              ×
-            </button>
-
-            <AddClassComponent
-              onClose={async () => {
-                setIsOpen(false);
-
-                await fetchData();
-              }}
-            />
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-slate-500">Tổng lớp</p>
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {classes.length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-slate-500">Đang lọc</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">
+              {selectedMajorId === "all"
+                ? "Tất cả ngành"
+                : (nganhDaoTao.find(
+                    (item) => String(item.id) === String(selectedMajorId),
+                  )?.name ?? "Không xác định")}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-slate-500">Kết quả</p>
+            <p className="mt-2 text-3xl font-bold text-blue-600">
+              {filteredClasses.length}
+            </p>
           </div>
         </div>
-      )}
 
-      {/* =================================
-          MODAL EDIT
-      ================================= */}
-
-      {editClass && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          onClick={() => setEditClass(null)}
-        >
-          <div
-            className="relative w-[600px] rounded-xl bg-white p-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setEditClass(null)}
-              className="absolute right-4 top-3 z-10 text-2xl text-gray-500 hover:text-red-500"
-            >
-              ×
-            </button>
-
-            <EditClassComponent
-              classItem={editClass}
-              onClose={() => setEditClass(null)}
-              onUpdate={handleUpdate}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* =================================
-          TABLE
-      ================================= */}
-
-      <div className="max-h-[calc(100vh-230px)] overflow-auto rounded-xl border border-gray-200 bg-white shadow-md">
-        <table className="min-w-[760px] w-full border-collapse">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="px-6 py-4 text-left text-xl font-bold">STT</th>
-
-              {/* <th className="px-6 py-4 text-left text-xl font-bold">ID</th> */}
-
-              <th className="px-6 py-4 text-left text-xl font-bold">
-                Ngành đào tạo
-              </th>
-              <th className="px-6 py-4 text-left text-xl font-bold">Tên lớp</th>
-              <th className="px-6 py-4 text-left text-xl font-bold">
-                Đại đội quản lý
-              </th>
-              <th className="px-6 py-4 text-left text-xl font-bold">
-                Thao tác
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {currentClasses.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="py-10 text-center text-gray-500">
-                  Không tìm thấy lớp học
-                </td>
-              </tr>
-            ) : (
-              currentClasses.map((value, index) => {
-                const major = nganhDaoTao.find(
-                  (item) => String(item.id) === String(value.majorId),
-                );
-                const daiDoifind = daiDoi.find(
-                  (item) => String(item.id) === String(value.daiDoiId),
-                );
-
-                return (
-                  <tr
-                    key={value.id}
-                    className="border-b transition duration-300 hover:bg-gray-100"
-                  >
-                    {/* STT */}
-
-                    <td className="px-6 py-4">{startIndex + index + 1}</td>
-
-                    {/* ID */}
-
-                    {/* <td className="px-6 py-4">{value.id}</td> */}
-
-                    {/* TÊN LỚP */}
-
-                    <td className="px-6 py-4">
-                      {major?.name ?? "Không xác định"}
-                    </td>
-                    <td className="px-6 py-4 font-medium">{value.name}</td>
-
-                    <td className="px-6 py-4">
-                      {daiDoifind?.nameDaiDoi ?? "Không xác định"}
-                    </td>
-                    {/* NGÀNH */}
-
-                    {/* THAO TÁC */}
-
-                    <td className="flex gap-2 px-6 py-4">
-                      <button
-                        onClick={() => setEditClass(value)}
-                        className="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-700"
-                      >
-                        Sửa
-                      </button>
-
-                      <button
-                        onClick={() => handleDelete(value.id)}
-                        className="rounded bg-red-500 px-4 py-2 font-bold text-white hover:bg-red-700"
-                      >
-                        Xóa
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-
-        {/* =================================
-            PAGINATION
-        ================================= */}
-
-        <div className="flex items-center justify-between border-t p-4">
-          {/* ITEMS PER PAGE */}
-
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Hiển thị</span>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={search}
+                onChange={handleSearchChange}
+                placeholder="Tìm kiếm tên lớp..."
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
 
             <select
-              value={itemsPerPage}
-              onChange={handleItemsPerPageChange}
-              className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+              value={selectedMajorId}
+              onChange={handleMajorChange}
+              className="min-w-[220px] rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             >
-              <option value={5}>5</option>
+              <option value="all">Tất cả ngành</option>
 
-              <option value={10}>10</option>
-
-              <option value={20}>20</option>
+              {nganhDaoTao.map((major) => (
+                <option key={major.id} value={major.id}>
+                  {major.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={selectedDaiDoiId}
+              onChange={handleDaiDoiChange}
+              className="min-w-[220px] rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="all">Tất cả đại đội</option>
+              {[...daiDoi].sort((a, b) => a.nameDaiDoi.localeCompare(b.nameDaiDoi, "vi", { numeric: true })).map((company) => <option key={company.id} value={company.id}>{company.nameDaiDoi}</option>)}
             </select>
 
-            <span className="text-sm text-gray-600">lớp / trang</span>
+            <Button
+              className="bg-blue-600 px-5 py-6 text-sm font-semibold text-white hover:bg-blue-700"
+              onClick={() => setIsOpen(true)}
+            >
+              + Thêm lớp học
+            </Button>
+          </div>
+        </div>
+
+        {isOpen && (
+            <ModalShell title="Thêm lớp học" description="Thiết lập lớp, chuyên ngành và đơn vị quản lý." onClose={() => setIsOpen(false)} className="max-w-2xl">
+              <AddClassComponent
+                onClose={async () => {
+                  setIsOpen(false);
+                  await fetchData();
+                }}
+              />
+            </ModalShell>
+        )}
+
+        {editClass && (
+            <ModalShell title="Chỉnh sửa lớp học" description={`Cập nhật thông tin lớp ${editClass.name}.`} onClose={() => setEditClass(null)} className="max-w-2xl">
+              <EditClassComponent
+                classItem={editClass}
+                onClose={() => setEditClass(null)}
+                onUpdate={handleUpdate}
+              />
+            </ModalShell>
+        )}
+
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-auto">
+            <table className="min-w-[760px] w-full border-collapse">
+              <thead className="bg-slate-100">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-600">
+                    STT
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-600">
+                    Ngành đào tạo
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-600">
+                    Tên lớp
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-600">
+                    Đại đội quản lý
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-600">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {currentClasses.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="py-12 text-center text-slate-500"
+                    >
+                      Không tìm thấy lớp học phù hợp
+                    </td>
+                  </tr>
+                ) : (
+                  currentClasses.map((value, index) => {
+                    const major = nganhDaoTao.find(
+                      (item) => String(item.id) === String(value.majorId),
+                    );
+                    const daiDoifind = daiDoi.find(
+                      (item) => String(item.id) === String(value.daiDoiId),
+                    );
+
+                    return (
+                      <tr
+                        key={value.id}
+                        className="border-b border-slate-200 transition duration-200 hover:bg-slate-50"
+                      >
+                        <td className="px-6 py-4 text-slate-600">
+                          {startIndex + index + 1}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                            {major?.name ?? "Không xác định"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="font-semibold text-slate-900">
+                            {value.name}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-700">
+                          {daiDoifind?.nameDaiDoi ?? "Không xác định"}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setEditClass(value)}
+                              className="rounded-lg bg-blue-500 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
+                            >
+                              Sửa
+                            </button>
+                            <button
+                              onClick={() => handleDelete(value.id)}
+                              className="rounded-lg bg-red-500 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-red-600"
+                            >
+                              Xóa
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
 
-          {/* PAGINATION */}
+          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <span>Hiển thị</span>
+              <select
+                value={itemsPerPage}
+                onChange={handleItemsPerPageChange}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-500"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+              </select>
+              <span>lớp / trang</span>
+            </div>
 
-          <div className="flex items-center gap-2">
-            {/* TRƯỚC */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Trước
+              </button>
 
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => prev - 1)}
-              className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Trước
-            </button>
+              {paginationPages.map((page, index) => {
+                if (page === "...") {
+                  return (
+                    <span
+                      key={`dots-${index}`}
+                      className="px-2 py-2 text-slate-500"
+                    >
+                      ...
+                    </span>
+                  );
+                }
 
-            {/* PAGE */}
-
-            {paginationPages.map((page, index) => {
-              if (page === "...") {
                 return (
-                  <span key={`dots-${index}`} className="px-2 py-2">
-                    ...
-                  </span>
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                      currentPage === page
+                        ? "border-blue-600 bg-blue-600 text-white"
+                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+                    }`}
+                  >
+                    {page}
+                  </button>
                 );
-              }
+              })}
 
-              return (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`rounded border px-4 py-2 ${
-                    currentPage === page
-                      ? "border-blue-500 bg-blue-500 text-white"
-                      : "border-gray-300 bg-white hover:bg-gray-100"
-                  }`}
-                >
-                  {page}
-                </button>
-              );
-            })}
-
-            {/* SAU */}
-
-            <button
-              disabled={currentPage === totalPages || totalPages === 0}
-              onClick={() => setCurrentPage((prev) => prev + 1)}
-              className="rounded border border-gray-300 px-4 py-2 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Sau
-            </button>
+              <button
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Sau
+              </button>
+            </div>
           </div>
         </div>
       </div>

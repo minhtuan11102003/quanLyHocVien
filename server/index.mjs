@@ -10,16 +10,25 @@ const PORT = Number(process.env.API_PORT || 3001);
 const LEGACY_DB_FILE = new URL("../db.json", import.meta.url);
 const SQLITE_FILE = new URL("../data/app.sqlite", import.meta.url);
 const SQLITE_PATH = fileURLToPath(SQLITE_FILE);
-mkdirSync(fileURLToPath(new URL("../data/", import.meta.url)), { recursive: true });
+mkdirSync(fileURLToPath(new URL("../data/", import.meta.url)), {
+  recursive: true,
+});
 const sqlite = new DatabaseSync(SQLITE_PATH);
-sqlite.exec(`CREATE TABLE IF NOT EXISTS records (collection TEXT NOT NULL, id TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY (collection, id))`);
-const existingRows = sqlite.prepare("SELECT COUNT(*) AS count FROM records").get();
+sqlite.exec(
+  `CREATE TABLE IF NOT EXISTS records (collection TEXT NOT NULL, id TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY (collection, id))`,
+);
+const existingRows = sqlite
+  .prepare("SELECT COUNT(*) AS count FROM records")
+  .get();
 if (Number(existingRows.count) === 0) {
   const legacy = JSON.parse(await readFile(LEGACY_DB_FILE, "utf8"));
-  const insert = sqlite.prepare("INSERT INTO records (collection, id, data) VALUES (?, ?, ?)");
+  const insert = sqlite.prepare(
+    "INSERT INTO records (collection, id, data) VALUES (?, ?, ?)",
+  );
   for (const [collection, value] of Object.entries(legacy)) {
     if (!Array.isArray(value)) continue;
-    for (const item of value) insert.run(collection, String(item.id), JSON.stringify(item));
+    for (const item of value)
+      insert.run(collection, String(item.id), JSON.stringify(item));
   }
   console.log("Imported db.json into data/app.sqlite");
 }
@@ -31,6 +40,7 @@ const collections = new Set([
   "classes",
   "ranks",
   "rankRequests",
+  "positionRequests",
   "quanKhu",
   "suDoan",
   "luDoan",
@@ -46,6 +56,7 @@ const permissionByCollection = {
   classes: "manage_classes",
   majors: "manage_majors",
   ranks: "manage_students",
+  positionRequests: "create_rank_request",
   quanKhu: "manage_units",
   suDoan: "manage_units",
   luDoan: "manage_units",
@@ -59,7 +70,9 @@ const permissionByCollection = {
 
 function readDb() {
   const db = {};
-  for (const row of sqlite.prepare("SELECT collection, data FROM records ORDER BY rowid").all()) {
+  for (const row of sqlite
+    .prepare("SELECT collection, data FROM records ORDER BY rowid")
+    .all()) {
     (db[row.collection] ||= []).push(JSON.parse(row.data));
   }
   return db;
@@ -68,10 +81,13 @@ function writeDb(db) {
   sqlite.exec("BEGIN");
   try {
     sqlite.exec("DELETE FROM records");
-    const insert = sqlite.prepare("INSERT INTO records (collection, id, data) VALUES (?, ?, ?)");
+    const insert = sqlite.prepare(
+      "INSERT INTO records (collection, id, data) VALUES (?, ?, ?)",
+    );
     for (const [collection, value] of Object.entries(db)) {
       if (!Array.isArray(value)) continue;
-      for (const item of value) insert.run(collection, String(item.id), JSON.stringify(item));
+      for (const item of value)
+        insert.run(collection, String(item.id), JSON.stringify(item));
     }
     sqlite.exec("COMMIT");
   } catch (error) {
@@ -129,6 +145,59 @@ function allowed(user, permission) {
 function idOf(x) {
   return String(x?.id ?? "");
 }
+function normalizeId(value) {
+  return String(value ?? "").trim();
+}
+function isValidStudentLink(db, input) {
+  if (!input || !input.majorId || !input.classId) return false;
+  const majorExists = db.majors?.some(
+    (item) => String(item.id) === String(input.majorId),
+  );
+  if (!majorExists) return false;
+  const classExists = db.classes?.some(
+    (item) =>
+      String(item.id) === String(input.classId) &&
+      String(item.majorId) === String(input.majorId),
+  );
+  if (!classExists) return false;
+  if (
+    !input.quanKhuId ||
+    !db.quanKhu?.some((item) => String(item.id) === String(input.quanKhuId))
+  )
+    return false;
+  if (!input.donViCap2Id) return false;
+  const unitValue = normalizeId(input.donViCap2Id);
+  if (!unitValue) return false;
+  const [source, id] = unitValue.split(":");
+  const units = [];
+  if (source === "suDoan") units.push(...(db.suDoan || []));
+  if (source === "luDoan") units.push(...(db.luDoan || []));
+  let unit;
+  if (!source || !id) {
+    unit = [...(db.suDoan || []), ...(db.luDoan || [])].find(
+      (item) => String(item.id) === String(unitValue),
+    );
+  } else {
+    unit = units.find((item) => String(item.id) === String(id));
+  }
+  if (!unit) return false;
+  if (String(unit.idQuanKhu || "") !== String(input.quanKhuId)) return false;
+  if (
+    !input.tieuDoanId ||
+    !db.tieuDoan?.some((item) => String(item.id) === String(input.tieuDoanId))
+  )
+    return false;
+  if (!input.daiDoiId) return false;
+  const company = db.daiDoi?.find(
+    (item) => String(item.id) === String(input.daiDoiId),
+  );
+  if (!company) return false;
+  if (String(company.idTieuDoan || "") !== String(input.tieuDoanId))
+    return false;
+  const classItem = db.classes?.find((item) => String(item.id) === String(input.classId));
+  if (!classItem?.daiDoiId || String(classItem.daiDoiId) !== String(input.daiDoiId)) return false;
+  return true;
+}
 function studentFor(db, request) {
   return db.students?.find((s) => String(s.id) === String(request.studentId));
 }
@@ -163,7 +232,8 @@ async function handler(req, res) {
         x.active !== false,
     );
     if (!user) return fail(res, 401, "Sai tài khoản hoặc mật khẩu");
-    const { password, ...safe } = user;
+    const safe = { ...user };
+    delete safe.password;
     return json(res, 200, { user: safe, token: tokenFor(user) });
   }
   if (!PUBLIC.has(url.pathname)) {
@@ -186,11 +256,13 @@ async function handler(req, res) {
   }
   const user = req.user;
   const permission = permissionByCollection[resource];
+  const input = ["POST", "PUT", "PATCH"].includes(req.method)
+    ? await body(req)
+    : {};
   if (resource === "rankRequests") {
     if (req.method === "POST") {
       if (!allowed(user, "create_rank_request"))
         return fail(res, 403, "Không có quyền lập hồ sơ");
-      const input = await body(req);
       const student = studentFor(db, input);
       if (!student) return fail(res, 400, "Học viên không tồn tại");
       if (
@@ -216,7 +288,6 @@ async function handler(req, res) {
     const index = list.findIndex((x) => idOf(x) === id);
     if (index < 0) return fail(res, 404, "Không tìm thấy hồ sơ");
     const current = list[index];
-    const input = await body(req);
     const nextStatus = input.status || current.status;
     if (user.role === "company") {
       if (
@@ -271,10 +342,71 @@ async function handler(req, res) {
     writeDb(db);
     return json(res, 200, merged);
   }
+  if (resource === "positionRequests") {
+    const requestStudents = (request) =>
+      (request.studentIds || [])
+        .map((studentId) => db.students?.find((student) => String(student.id) === String(studentId)))
+        .filter(Boolean);
+    if (req.method === "POST") {
+      if (!allowed(user, "create_rank_request")) return fail(res, 403, "Không có quyền lập hồ sơ bổ nhiệm");
+      const studentIds = [...new Set((input.studentIds || []).map(String))];
+      const students = studentIds.map((studentId) => db.students?.find((student) => String(student.id) === studentId)).filter(Boolean);
+      const position = db.chucVu?.find((item) => String(item.id) === String(input.positionId));
+      if (!position || !students.length || students.length !== studentIds.length) return fail(res, 400, "Thiếu chức vụ hoặc học viên liên kết");
+      if (!String(input.reason || "").trim()) return fail(res, 400, "Cần nêu căn cứ hoặc ý kiến đề nghị");
+      if (students.some((student) => student.graduationStatus === "graduated")) return fail(res, 400, "Không thể lập hồ sơ bổ nhiệm cho học viên đã tốt nghiệp");
+      if (!["individual", "collective"].includes(input.appointmentType)) return fail(res, 400, "Loại bổ nhiệm không hợp lệ");
+      if (input.appointmentType === "individual" && students.length !== 1) return fail(res, 400, "Bổ nhiệm cá nhân chỉ gồm một học viên");
+      if (input.appointmentType === "collective" && students.length < 2) return fail(res, 400, "Bổ nhiệm tập thể cần từ hai học viên");
+      if (user.role === "company" && students.some((student) => String(student.daiDoiId) !== String(user.unitId))) return fail(res, 403, "Học viên không thuộc Đại đội của bạn");
+      const classIds = [...new Set(students.map((student) => String(student.classId)))];
+      const classItem = classIds.length === 1 ? db.classes?.find((item) => String(item.id) === classIds[0]) : null;
+      const item = { id: randomUUID(), appointmentType: input.appointmentType, positionId: position.id, positionName: position.name, studentIds, students: students.map((student) => ({ id: student.id, name: student.name, maSoHV: student.maSoHV, classId: student.classId, daiDoiId: student.daiDoiId })), classId: classItem?.id || null, className: classItem?.name || null, totalStudents: students.length, reason: String(input.reason || "").trim(), status: "pending", approvalStage: "battalion", submittedBy: user.id, submittedByRole: user.role, submittedAt: new Date().toISOString() };
+      db.positionRequests ||= [];
+      db.positionRequests.push(item); writeDb(db); return json(res, 201, item);
+    }
+    if (!id || !["PATCH", "PUT"].includes(req.method)) return fail(res, 405, "Thao tác không hợp lệ");
+    const index = list.findIndex((item) => idOf(item) === id); if (index < 0) return fail(res, 404, "Không tìm thấy hồ sơ");
+    const current = list[index]; const students = requestStudents(current); const nextStatus = input.status || current.status;
+    const belongsToBattalion = user.role === "battalion" && students.length > 0 && students.every((student) => { const company = db.daiDoi?.find((item) => String(item.id) === String(student.daiDoiId)); return String(company?.idTieuDoan) === String(user.unitId); });
+    if (user.role === "company") {
+      if (
+        current.submittedBy !== user.id ||
+        !["revision_requested", "rejected"].includes(current.status) ||
+        nextStatus !== "pending" ||
+        (input.approvalStage && input.approvalStage !== "battalion")
+      ) return fail(res, 403, "Đại đội chỉ được gửi lại hồ sơ cần chỉnh sửa");
+    }
+    else if (user.role === "battalion") { if (!belongsToBattalion || current.approvalStage !== "battalion" || !allowed(user, "submit_school") || input.approvalStage !== "school" || nextStatus !== "pending") return fail(res, 403, "Tiểu đoàn chỉ được chuyển hồ sơ thuộc đơn vị mình"); }
+    else if (user.role === "school") { if (current.approvalStage !== "school" || !allowed(user, "approve_school") || !["approved", "revision_requested", "rejected"].includes(nextStatus)) return fail(res, 403, "Nhà trường chỉ xử lý hồ sơ chờ duyệt"); }
+    else if (user.role !== "admin") return fail(res, 403, "Không có quyền xử lý hồ sơ");
+    list[index] = {
+      ...current,
+      ...input,
+      id: current.id,
+      studentIds: current.studentIds,
+      students: current.students,
+      positionId: current.positionId,
+      positionName: current.positionName,
+      submittedBy: current.submittedBy,
+      submittedByRole: current.submittedByRole,
+      submittedAt: current.submittedAt,
+      reviewedBy: user.id,
+      reviewedByRole: user.role,
+      reviewedAt: new Date().toISOString(),
+    };
+    if (user.role === "battalion") Object.assign(list[index], { forwardedBy: user.id, forwardedAt: new Date().toISOString(), forwardedByRole: user.role });
+    if (nextStatus === "approved") {
+      if (students.length !== current.studentIds.length)
+        return fail(res, 400, "Hồ sơ mất liên kết học viên");
+      list[index].approvalStage = "completed";
+      for (const student of students) student.chucVu = current.positionName;
+    }
+    writeDb(db); return json(res, 200, list[index]);
+  }
   if (!allowed(user, permission))
     return fail(res, 403, "Không có quyền thực hiện thao tác này");
   if (resource === "students" && req.method !== "GET") {
-    const input = await body(req);
     if (
       input.capBac &&
       Object.keys(input).every((k) => ["capBac"].includes(k)) &&
@@ -282,6 +414,43 @@ async function handler(req, res) {
       user.role !== "admin"
     )
       return fail(res, 403, "Cấp bậc chỉ được cập nhật qua Nhà trường");
+    if (
+      req.method === "POST" ||
+      req.method === "PUT" ||
+      req.method === "PATCH"
+    ) {
+      const studentInput = {
+        ...(req.method === "PATCH" ? list.find((x) => idOf(x) === id) || {} : {}),
+        ...input,
+      };
+      if (
+        !studentInput.maSoHV ||
+        !studentInput.name ||
+        !studentInput.majorId ||
+        !studentInput.classId ||
+        !studentInput.quanKhuId ||
+        !studentInput.donViCap2Id ||
+        !studentInput.tieuDoanId ||
+        !studentInput.daiDoiId ||
+        !studentInput.chucVu ||
+        !studentInput.danToc ||
+        !studentInput.birthDay ||
+        !studentInput.capBac
+      ) {
+        return fail(
+          res,
+          400,
+          "Thiếu thông tin bắt buộc hoặc thiếu liên kết dữ liệu học viên",
+        );
+      }
+      if (!isValidStudentLink(db, studentInput)) {
+        return fail(
+          res,
+          400,
+          "Dữ liệu học viên không khớp với khóa liên kết ngành, lớp, đơn vị và tiểu đoàn/đại đội",
+        );
+      }
+    }
   }
   if (!["POST", "PATCH", "PUT", "DELETE"].includes(req.method))
     return fail(res, 405, "Thao tác không hợp lệ");
@@ -292,7 +461,6 @@ async function handler(req, res) {
     writeDb(db);
     return json(res, 200, {});
   }
-  const input = await body(req);
   if (req.method === "POST") {
     const item = { ...input, id: input.id || randomUUID() };
     list.push(item);
