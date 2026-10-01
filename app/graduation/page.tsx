@@ -2,325 +2,37 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
-type Student = {
-  id: string;
-  name: string;
-  maSoHV: string;
-  classId: string;
-  quanKhuId?: string;
-  donViCap2Id?: string;
-  graduationStatus?: string;
-  originQuanKhuId?: string;
-  originDonViCap2Id?: string;
-};
+import { DataPagination, usePagination } from "@/components/DataPagination";
+type Student = { id: string; name: string; maSoHV: string; classId: string; daiDoiId?: string; quanKhuId?: string; donViCap2Id?: string; graduationStatus?: string; originQuanKhuId?: string; originDonViCap2Id?: string };
+type ClassItem = { id: string; name: string; daiDoiId?: string };
+type Company = { id: string; nameDaiDoi: string };
 type Region = { id: string; nameQuanKhu: string };
-type Unit = {
-  id: string;
-  name: string;
-  parentId: string;
-  type: string;
-  source: "suDoan" | "luDoan";
-};
+type Unit = { id: string; name: string; parentId: string; type: string; source: "suDoan" | "luDoan" };
 type UnitRecord = { id: string; idQuanKhu: string; nameSuDoan?: string; nameLuDoan?: string };
-type Transfer = {
-  id: string;
-  studentId: string;
-  studentName: string;
-  maSoHV: string;
-  type: "return" | "transfer";
-  fromQuanKhuId: string;
-  toQuanKhuId: string;
-  fromDonViCap2Id: string;
-  toDonViCap2Id: string;
-  createdAt: string;
-};
+type Transfer = { id: string; studentId: string; studentName: string; maSoHV: string; type: "return" | "transfer"; fromQuanKhuId: string; toQuanKhuId: string; fromDonViCap2Id: string; toDonViCap2Id: string; createdAt: string };
+type Destination = { region: string; unit: string; custom?: boolean };
 const API = "http://localhost:3001";
 
 export default function GraduationPage() {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [history, setHistory] = useState<Transfer[]>([]);
-  const [studentId, setStudentId] = useState("");
-  const [mode, setMode] = useState<"return" | "transfer">("return");
-  const [targetRegion, setTargetRegion] = useState("");
-  const [targetUnit, setTargetUnit] = useState("");
-  const [search, setSearch] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const load = async () => {
-    const [s, q, sd, ld, h] = await Promise.all([
-      fetch(`${API}/students`),
-      fetch(`${API}/quanKhu`),
-      fetch(`${API}/suDoan`),
-      fetch(`${API}/luDoan`),
-      fetch(`${API}/graduationTransfers`),
-    ]);
-    const [studentData, regionData, sdData, ldData, historyData] =
-      await Promise.all([
-        s.json(),
-        q.json(),
-        sd.json(),
-        ld.json(),
-        h.ok ? h.json() : [],
-      ]);
-    setStudents(studentData);
-    setRegions(regionData);
-    setHistory(historyData);
-    setUnits([
-      ...(sdData as UnitRecord[]).map((x) => ({
-        id: x.id,
-        name: x.nameSuDoan || "Chưa đặt tên",
-        parentId: x.idQuanKhu,
-        type: "Sư đoàn",
-        source: "suDoan" as const,
-      })),
-      ...(ldData as UnitRecord[]).map((x) => ({
-        id: x.id,
-        name: x.nameLuDoan || "Chưa đặt tên",
-        parentId: x.idQuanKhu,
-        type: "Lữ đoàn",
-        source: "luDoan" as const,
-      })),
-    ]);
-  };
-  useEffect(() => {
-    load().catch(console.error);
-  }, []);
-
-  const student = students.find((x) => x.id === studentId);
-  const targetUnits = useMemo(
-    () => units.filter((x) => x.parentId === targetRegion),
-    [targetRegion, units],
-  );
-  const visibleStudents = students.filter((x) =>
-    `${x.name} ${x.maSoHV}`
-      .toLocaleLowerCase()
-      .includes(search.toLocaleLowerCase()),
-  );
-  const regionName = (id?: string) =>
-    regions.find((x) => x.id === id)?.nameQuanKhu || "Chưa cập nhật";
-  const unitName = (id?: string) => {
-    const item = units.find((x) => `${x.source}:${x.id}` === id || x.id === id);
-    return item ? `${item.type} ${item.name}` : "Chưa cập nhật";
-  };
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!student) return alert("Vui lòng chọn học viên");
-    if (mode === "transfer" && (!targetRegion || !targetUnit))
-      return alert("Vui lòng chọn Quân khu và Sư đoàn/Lữ đoàn mới");
-    const originRegion = student.originQuanKhuId || student.quanKhuId || "";
-    const originUnit = student.originDonViCap2Id || student.donViCap2Id || "";
-    const toRegion = mode === "return" ? originRegion : targetRegion;
-    const toUnit = mode === "return" ? originUnit : targetUnit;
-    setSaving(true);
-    try {
-      const studentRes = await fetch(`${API}/students/${student.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          graduationStatus: "graduated",
-          graduatedAt: new Date().toISOString(),
-          originQuanKhuId: originRegion,
-          originDonViCap2Id: originUnit,
-          quanKhuId: toRegion,
-          donViCap2Id: toUnit,
-        }),
-      });
-      if (!studentRes.ok) throw new Error("Không thể cập nhật học viên");
-      const historyRes = await fetch(`${API}/graduationTransfers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: crypto.randomUUID(),
-          studentId: student.id,
-          studentName: student.name,
-          maSoHV: student.maSoHV,
-          type: mode,
-          fromQuanKhuId: student.quanKhuId || "",
-          toQuanKhuId: toRegion,
-          fromDonViCap2Id: student.donViCap2Id || "",
-          toDonViCap2Id: toUnit,
-          createdAt: new Date().toISOString(),
-        }),
-      });
-      if (!historyRes.ok) throw new Error("Không thể lưu lịch sử");
-      alert(
-        mode === "return"
-          ? "Đã ghi nhận tốt nghiệp và về đơn vị cũ"
-          : "Đã ghi nhận tốt nghiệp và điều chuyển công tác",
-      );
-      setStudentId("");
-      setTargetRegion("");
-      setTargetUnit("");
-      await load();
-    } catch (error) {
-      console.error(error);
-      alert("Không thể lưu quyết định công tác");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="page-shell space-y-5">
-      <header className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-700 to-teal-700 p-6 text-white shadow-lg shadow-emerald-900/10">
-        <p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-100">Điều hành đào tạo</p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight">Tốt nghiệp & điều chỉnh công tác</h1>
-        <p className="mt-2 max-w-2xl text-sm text-emerald-50">
-          Ghi nhận học viên tốt nghiệp, về đơn vị cũ hoặc chuyển sang đơn vị
-          mới.
-        </p>
-      </header>
-      <form
-        onSubmit={submit}
-        className="max-w-4xl space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
-      >
-        <div><p className="text-xs font-bold uppercase tracking-[.16em] text-emerald-700">Quyết định mới</p><h2 className="mt-1 text-xl font-bold text-slate-900">Lập quyết định tốt nghiệp</h2></div>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tìm theo tên hoặc mã số..."
-          className="field-control"
-        />
-        <select
-          required
-          value={studentId}
-          onChange={(e) => setStudentId(e.target.value)}
-          className="field-control"
-        >
-          <option value="">-- Chọn học viên --</option>
-          {visibleStudents.map((x) => (
-            <option key={x.id} value={x.id}>
-              {x.name} - {x.maSoHV}
-              {x.graduationStatus === "graduated" ? " (đã tốt nghiệp)" : ""}
-            </option>
-          ))}
-        </select>
-        {student && (
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-700">
-            <div>
-              <b>Đơn vị hiện tại:</b> {regionName(student.quanKhuId)} /{" "}
-              {unitName(student.donViCap2Id)}
-            </div>
-          </div>
-        )}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm font-medium transition ${mode === "return" ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-slate-200 text-slate-700"}`}>
-            <input
-              type="radio"
-              checked={mode === "return"}
-              onChange={() => {
-                setMode("return");
-                setTargetRegion("");
-                setTargetUnit("");
-              }}
-            />{" "}
-            Về đơn vị cũ
-          </label>
-          <label className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm font-medium transition ${mode === "transfer" ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-slate-200 text-slate-700"}`}>
-            <input
-              type="radio"
-              checked={mode === "transfer"}
-              onChange={() => setMode("transfer")}
-            />{" "}
-            Điều chuyển đơn vị mới
-          </label>
-        </div>
-        {mode === "transfer" && (
-          <>
-            <select
-              required
-              value={targetRegion}
-              onChange={(e) => {
-                setTargetRegion(e.target.value);
-                setTargetUnit("");
-              }}
-              className="field-control"
-            >
-              <option value="">-- Chọn Quân khu mới --</option>
-              {regions.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.nameQuanKhu}
-                </option>
-              ))}
-            </select>
-            <select
-              required
-              disabled={!targetRegion}
-              value={targetUnit}
-              onChange={(e) => setTargetUnit(e.target.value)}
-              className="field-control disabled:bg-slate-100"
-            >
-              <option value="">
-                {targetRegion
-                  ? "-- Chọn Sư đoàn/Lữ đoàn mới --"
-                  : "-- Chọn Quân khu trước --"}
-              </option>
-              {targetUnits.map((x) => (
-                <option
-                  key={`${x.source}:${x.id}`}
-                  value={`${x.source}:${x.id}`}
-                >
-                  {x.type} {x.name}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-        <div className="flex justify-end border-t border-slate-100 pt-4">
-          <button
-            disabled={saving}
-            className="rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 disabled:opacity-50"
-          >
-            {saving ? "Đang lưu..." : "Xác nhận tốt nghiệp & công tác"}
-          </button>
-        </div>
-      </form>
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm"><div className="border-b border-slate-100 px-5 py-4"><h2 className="font-bold text-slate-900">Lịch sử quyết định</h2><p className="mt-0.5 text-sm text-slate-500">Các quyết định đã được ghi nhận trong hệ thống.</p></div><div className="overflow-x-auto">
-        <table className="min-w-[900px] w-full">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="p-3 text-left">Học viên</th>
-              <th className="p-3 text-left">Hình thức</th>
-              <th className="p-3 text-left">Đơn vị cũ</th>
-              <th className="p-3 text-left">Đơn vị sau tốt nghiệp</th>
-              <th className="p-3 text-left">Thời gian</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((x) => (
-              <tr key={x.id} className="border-t">
-                <td className="p-3">
-                  {x.studentName}
-                  <div className="text-xs text-gray-500">{x.maSoHV}</div>
-                </td>
-                <td className="p-3">
-                  {x.type === "return" ? "Về đơn vị cũ" : "Điều chuyển"}
-                </td>
-                <td className="p-3">
-                  {regionName(x.fromQuanKhuId)} / {unitName(x.fromDonViCap2Id)}
-                </td>
-                <td className="p-3">
-                  {regionName(x.toQuanKhuId)} / {unitName(x.toDonViCap2Id)}
-                </td>
-                <td className="p-3">
-                  {new Date(x.createdAt).toLocaleDateString("vi-VN")}
-                </td>
-              </tr>
-            ))}
-            {history.length === 0 && (
-              <tr>
-                <td colSpan={5} className="p-8 text-center text-gray-500">
-                  Chưa có quyết định
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div></section>
-    </div>
-  );
+  const [students, setStudents] = useState<Student[]>([]); const [classes, setClasses] = useState<ClassItem[]>([]); const [companies, setCompanies] = useState<Company[]>([]); const [regions, setRegions] = useState<Region[]>([]); const [units, setUnits] = useState<Unit[]>([]); const [history, setHistory] = useState<Transfer[]>([]);
+  const [companyId, setCompanyId] = useState(""); const [classId, setClassId] = useState(""); const [search, setSearch] = useState(""); const [selectedIds, setSelectedIds] = useState<string[]>([]); const [mode, setMode] = useState<"return" | "transfer">("return"); const [transferScope, setTransferScope] = useState<"all" | "individual">("all"); const [sharedDestination, setSharedDestination] = useState<Destination>({ region: "", unit: "" }); const [destinations, setDestinations] = useState<Record<string, Destination>>({}); const [saving, setSaving] = useState(false);
+  const load = async () => { const responses = await Promise.all(["students", "classes", "daiDoi", "quanKhu", "suDoan", "luDoan", "graduationTransfers"].map((path) => fetch(`${API}/${path}`))); const values = await Promise.all(responses.map(async (response) => response.ok ? response.json() : [])); setStudents(values[0]); setClasses(values[1]); setCompanies(values[2]); setRegions(values[3]); setHistory(values[6]); setUnits([...(values[4] as UnitRecord[]).map((item) => ({ id: item.id, name: item.nameSuDoan || "Chưa đặt tên", parentId: item.idQuanKhu, type: "Sư đoàn", source: "suDoan" as const })), ...(values[5] as UnitRecord[]).map((item) => ({ id: item.id, name: item.nameLuDoan || "Chưa đặt tên", parentId: item.idQuanKhu, type: "Lữ đoàn", source: "luDoan" as const }))]); };
+  useEffect(() => { load().catch(console.error); }, []);
+  const regionName = (id?: string) => regions.find((item) => item.id === id)?.nameQuanKhu || "Chưa cập nhật";
+  const unitName = (id?: string) => { const unit = units.find((item) => `${item.source}:${item.id}` === id || item.id === id); return unit ? `${unit.type} ${unit.name}` : "Chưa cập nhật"; };
+  const oldDestination = (student: Student) => ({ region: student.originQuanKhuId || student.quanKhuId || "", unit: student.originDonViCap2Id || student.donViCap2Id || "" });
+  const availableClasses = useMemo(() => classes.filter((item) => !companyId || String(item.daiDoiId) === String(companyId)), [classes, companyId]);
+  const eligible = useMemo(() => students.filter((student) => student.graduationStatus !== "graduated" && (!companyId || String(student.daiDoiId) === String(companyId)) && (!classId || String(student.classId) === String(classId))), [students, companyId, classId]);
+  const visible = useMemo(() => { const key = search.trim().toLocaleLowerCase(); return eligible.filter((student) => !key || `${student.name} ${student.maSoHV}`.toLocaleLowerCase().includes(key)); }, [eligible, search]);
+  const selected = eligible.filter((student) => selectedIds.includes(student.id));
+  const toggle = (id: string) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  const toggleAll = () => setSelectedIds((current) => visible.length && visible.every((student) => current.includes(student.id)) ? current.filter((id) => !visible.some((student) => student.id === id)) : [...new Set([...current, ...visible.map((student) => student.id)])]);
+  const setDestination = (id: string, value: Partial<Destination>) => setDestinations((current) => { const existing = current[id] || { region: "", unit: "" }; return { ...current, [id]: { ...existing, ...value } }; });
+  const targetFor = (student: Student): Destination => mode === "return" ? oldDestination(student) : destinations[student.id]?.custom ? destinations[student.id] : sharedDestination;
+  const submit = async (event: React.FormEvent) => { event.preventDefault(); if (!selected.length) return alert("Hãy tick ít nhất một học viên."); if (mode === "transfer" && selected.some((student) => !targetFor(student).region || !targetFor(student).unit)) return alert("Vui lòng chọn đầy đủ đơn vị mới cho các học viên điều chuyển."); if (!confirm(`Xác nhận tốt nghiệp cho ${selected.length} học viên đã chọn?`)) return; setSaving(true); const now = new Date().toISOString(); const failed: string[] = []; for (const student of selected) { const old = oldDestination(student); const target = targetFor(student); try { const update = await fetch(`${API}/students/${student.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ graduationStatus: "graduated", graduatedAt: now, originQuanKhuId: old.region, originDonViCap2Id: old.unit, quanKhuId: target.region, donViCap2Id: target.unit }) }); if (!update.ok) throw new Error(); const log = await fetch(`${API}/graduationTransfers`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: crypto.randomUUID(), studentId: student.id, studentName: student.name, maSoHV: student.maSoHV, type: mode, fromQuanKhuId: student.quanKhuId || "", toQuanKhuId: target.region, fromDonViCap2Id: student.donViCap2Id || "", toDonViCap2Id: target.unit, createdAt: now }) }); if (!log.ok) throw new Error(); } catch { failed.push(student.name); } } setSaving(false); setSelectedIds([]); setDestinations({}); alert(failed.length ? `Đã xử lý ${selected.length - failed.length}/${selected.length}. Không thể lưu: ${failed.join(", ")}.` : `Đã ghi nhận tốt nghiệp cho ${selected.length} học viên.`); await load(); };
+  return <div className="page-shell space-y-5"><header className="rounded-3xl bg-gradient-to-br from-emerald-700 to-teal-700 p-6 text-white"><p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-100">Điều hành đào tạo</p><h1 className="mt-2 text-2xl font-bold">Tốt nghiệp & điều chuyển</h1><p className="mt-2 text-sm text-emerald-50">Chọn học viên chưa tốt nghiệp theo Đại đội, Lớp học; có thể về đơn vị cũ hoặc điều chuyển từng người.</p></header><form onSubmit={submit} className="space-y-5 rounded-3xl border bg-white p-5 shadow-sm"><div className="grid gap-4 md:grid-cols-3"><label className="field-label">Đại đội<select value={companyId} onChange={(event) => { setCompanyId(event.target.value); setClassId(""); setSelectedIds([]); }} className="field-control mt-1"><option value="">Tất cả Đại đội</option>{companies.map((company) => <option key={company.id} value={company.id}>{company.nameDaiDoi}</option>)}</select></label><label className="field-label">Lớp học<select value={classId} disabled={!companyId} onChange={(event) => { setClassId(event.target.value); setSelectedIds([]); }} className="field-control mt-1"><option value="">Tất cả lớp</option>{availableClasses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label className="field-label">Tìm học viên<input value={search} onChange={(event) => setSearch(event.target.value)} className="field-control mt-1" placeholder="Tên hoặc mã học viên..." /></label></div><section className="overflow-hidden rounded-2xl border"><div className="flex justify-between gap-3 border-b bg-slate-50 p-3"><span className="text-sm font-semibold">Học viên chưa tốt nghiệp: {visible.length}</span><button type="button" onClick={toggleAll} className="text-sm font-semibold text-emerald-700">{visible.length && visible.every((student) => selectedIds.includes(student.id)) ? "Bỏ chọn tất cả" : "Chọn tất cả"}</button></div>{visible.map((student) => { const old = oldDestination(student); return <label key={student.id} className="flex cursor-pointer items-center gap-3 border-b p-3 last:border-0 hover:bg-emerald-50/50"><input type="checkbox" checked={selectedIds.includes(student.id)} onChange={() => toggle(student.id)} /><span className="min-w-0 flex-1"><b>{student.name}</b><span className="ml-2 text-xs text-slate-500">{student.maSoHV}</span><span className="mt-1 block text-xs text-slate-600">Đơn vị cũ: {regionName(old.region)} / {unitName(old.unit)}</span></span></label>})}{!visible.length && <p className="p-6 text-center text-sm text-slate-500">Không có học viên chưa tốt nghiệp phù hợp.</p>}</section><div className="grid gap-3 sm:grid-cols-2"><label className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 ${mode === "return" ? "border-emerald-300 bg-emerald-50" : ""}`}><input type="radio" checked={mode === "return"} onChange={() => setMode("return")} />Về đơn vị cũ cho toàn bộ học viên đã chọn</label><label className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 ${mode === "transfer" ? "border-emerald-300 bg-emerald-50" : ""}`}><input type="radio" checked={mode === "transfer"} onChange={() => setMode("transfer")} />Điều chuyển đơn vị mới</label></div>{mode === "transfer" && <TransferSettings scope={transferScope} setScope={setTransferScope} shared={sharedDestination} setShared={setSharedDestination} selected={selected} destinations={destinations} setDestination={setDestination} regions={regions} units={units} />}<div className="flex items-center justify-between border-t pt-4"><span className="text-sm">Đã chọn: <b>{selected.length}</b> học viên</span><button disabled={saving || !selected.length} className="rounded-xl bg-emerald-600 px-5 py-2.5 font-semibold text-white disabled:opacity-50">{saving ? "Đang lưu..." : `Xác nhận ${selected.length} học viên`}</button></div></form><History history={history} regionName={regionName} unitName={unitName} /></div>;
 }
+
+function DestinationFields({ value, onChange, regions, units }: { value: Destination; onChange: (value: Destination) => void; regions: Region[]; units: Unit[] }) { const choices = units.filter((unit) => unit.parentId === value.region); return <div className="grid gap-3 sm:grid-cols-2"><select value={value.region} onChange={(event) => onChange({ region: event.target.value, unit: "" })} className="field-control"><option value="">-- Chọn Quân khu mới --</option>{regions.map((region) => <option key={region.id} value={region.id}>{region.nameQuanKhu}</option>)}</select><select value={value.unit} disabled={!value.region} onChange={(event) => onChange({ ...value, unit: event.target.value })} className="field-control"><option value="">-- Chọn Sư đoàn/Lữ đoàn mới --</option>{choices.map((unit) => <option key={`${unit.source}:${unit.id}`} value={`${unit.source}:${unit.id}`}>{unit.type} {unit.name}</option>)}</select></div>; }
+function TransferSettings({ scope, setScope, shared, setShared, selected, destinations, setDestination, regions, units }: { scope: "all" | "individual"; setScope: (value: "all" | "individual") => void; shared: Destination; setShared: (value: Destination) => void; selected: Student[]; destinations: Record<string, Destination>; setDestination: (id: string, value: Partial<Destination>) => void; regions: Region[]; units: Unit[] }) { return <section className="space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4"><div className="flex items-center justify-between gap-3"><div><p className="font-semibold text-emerald-900">Đơn vị mới mặc định</p><p className="text-sm text-emerald-800">Áp dụng cho toàn bộ học viên đã chọn, trừ các trường hợp được tick điều chuyển riêng.</p></div><button type="button" onClick={() => setScope("all")} className="text-xs text-emerald-700">{scope === "individual" ? "Dùng đơn vị mặc định" : ""}</button></div><DestinationFields value={shared} onChange={setShared} regions={regions} units={units} /><div className="rounded-xl border bg-white"><div className="border-b bg-slate-50 p-3"><p className="text-sm font-semibold">Trường hợp điều chuyển riêng</p><p className="text-xs text-slate-500">Chỉ tick học viên cần đến đơn vị khác với đơn vị mặc định.</p></div>{selected.length ? selected.map((student) => { const custom = Boolean(destinations[student.id]?.custom); return <div key={student.id} className="border-b p-3 last:border-0"><label className="flex cursor-pointer items-center gap-3"><input type="checkbox" checked={custom} onChange={(event) => { setScope(event.target.checked ? "individual" : "all"); setDestination(student.id, event.target.checked ? { custom: true, region: "", unit: "" } : { custom: false, region: "", unit: "" }); }} /><span><b>{student.name}</b> <span className="text-xs text-slate-500">{student.maSoHV}</span></span></label>{custom && <div className="mt-3 pl-7"><DestinationFields value={destinations[student.id]} onChange={(value) => setDestination(student.id, { ...value, custom: true })} regions={regions} units={units} /></div>}</div>; }) : <p className="p-3 text-sm text-slate-500">Chọn học viên trước để thiết lập trường hợp riêng.</p>}</div></section>; }
+function History({ history, regionName, unitName }: { history: Transfer[]; regionName: (id?: string) => string; unitName: (id?: string) => string }) { const pagination = usePagination(history); return <section className="overflow-hidden rounded-3xl border bg-white shadow-sm"><div className="border-b p-4 font-bold">Lịch sử quyết định</div><div className="overflow-auto"><table className="min-w-[850px] w-full"><thead className="bg-slate-50"><tr><th className="p-3 text-left">Học viên</th><th className="p-3 text-left">Hình thức</th><th className="p-3 text-left">Đơn vị cũ</th><th className="p-3 text-left">Đơn vị sau tốt nghiệp</th></tr></thead><tbody>{pagination.currentItems.map((item) => <tr key={item.id} className="border-t"><td className="p-3">{item.studentName}<div className="text-xs text-slate-500">{item.maSoHV}</div></td><td className="p-3">{item.type === "return" ? "Về đơn vị cũ" : "Điều chuyển"}</td><td className="p-3">{regionName(item.fromQuanKhuId)} / {unitName(item.fromDonViCap2Id)}</td><td className="p-3">{regionName(item.toQuanKhuId)} / {unitName(item.toDonViCap2Id)}</td></tr>)}{!history.length && <tr><td colSpan={4} className="p-7 text-center text-slate-500">Chưa có quyết định</td></tr>}</tbody></table></div><DataPagination {...pagination} totalItems={history.length} label="quyết định / trang" /></section>; }

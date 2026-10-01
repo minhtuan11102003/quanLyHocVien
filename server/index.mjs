@@ -265,6 +265,8 @@ async function handler(req, res) {
         return fail(res, 403, "Không có quyền lập hồ sơ");
       const student = studentFor(db, input);
       if (!student) return fail(res, 400, "Học viên không tồn tại");
+      if (student.graduationStatus === "graduated")
+        return fail(res, 400, "Không thể lập hồ sơ nâng cấp cho học viên đã tốt nghiệp");
       if (
         user.role === "company" &&
         String(student.daiDoiId) !== String(user.unitId)
@@ -408,6 +410,12 @@ async function handler(req, res) {
     return fail(res, 403, "Không có quyền thực hiện thao tác này");
   if (resource === "students" && req.method !== "GET") {
     if (
+      input.graduationStatus === "graduated" &&
+      id &&
+      list.find((item) => idOf(item) === id)?.graduationStatus === "graduated"
+    )
+      return fail(res, 409, "Học viên này đã được ghi nhận tốt nghiệp");
+    if (
       input.capBac &&
       Object.keys(input).every((k) => ["capBac"].includes(k)) &&
       user.role !== "school" &&
@@ -452,11 +460,60 @@ async function handler(req, res) {
       }
     }
   }
+  if (["POST", "PATCH", "PUT"].includes(req.method)) {
+    const current = id ? list.find((item) => idOf(item) === id) : null;
+    const candidate = req.method === "PATCH" ? { ...current, ...input } : input;
+    const name = String(candidate?.name || "").trim();
+    const duplicate = (items, matcher) =>
+      items?.some((item) => idOf(item) !== idOf(current) && matcher(item));
+
+    if (resource === "classes") {
+      if (!name || !candidate.majorId || !candidate.daiDoiId)
+        return fail(res, 400, "Lớp học cần có tên, chuyên ngành và Đại đội quản lý");
+      if (!db.majors?.some((item) => idOf(item) === String(candidate.majorId)))
+        return fail(res, 400, "Chuyên ngành của lớp học không tồn tại");
+      if (!db.daiDoi?.some((item) => idOf(item) === String(candidate.daiDoiId)))
+        return fail(res, 400, "Đại đội quản lý lớp học không tồn tại");
+      if (duplicate(list, (item) => String(item.name).trim().toLocaleLowerCase() === name.toLocaleLowerCase() && String(item.majorId) === String(candidate.majorId) && String(item.daiDoiId) === String(candidate.daiDoiId)))
+        return fail(res, 409, "Lớp học này đã tồn tại trong chuyên ngành và Đại đội đã chọn");
+    }
+    if (resource === "daiDoi") {
+      if (!String(candidate.nameDaiDoi || "").trim() || !candidate.idTieuDoan)
+        return fail(res, 400, "Đại đội cần có tên và Tiểu đoàn quản lý");
+      if (!db.tieuDoan?.some((item) => idOf(item) === String(candidate.idTieuDoan)))
+        return fail(res, 400, "Tiểu đoàn quản lý Đại đội không tồn tại");
+    }
+    if (resource === "tieuDoan" && !String(candidate.nameTieuDoan || "").trim())
+      return fail(res, 400, "Tiểu đoàn cần có tên");
+    if (resource === "chucVu" && !name)
+      return fail(res, 400, "Chức vụ không được để trống");
+    if (resource === "majors" && (!name || !String(candidate.shortName || "").trim()))
+      return fail(res, 400, "Chuyên ngành cần có tên và mã viết tắt");
+    if (resource === "ranks") {
+      if (!name || !Number.isInteger(Number(candidate.rankOrder)) || Number(candidate.rankOrder) < 1)
+        return fail(res, 400, "Cấp bậc cần có tên và thứ tự là số nguyên dương");
+      if (!["Hạ sĩ quan, binh sĩ", "Sĩ quan"].includes(candidate.group))
+        return fail(res, 400, "Nhóm cấp bậc không hợp lệ");
+    }
+  }
   if (!["POST", "PATCH", "PUT", "DELETE"].includes(req.method))
     return fail(res, 405, "Thao tác không hợp lệ");
   if (req.method === "DELETE") {
     const index = list.findIndex((x) => idOf(x) === id);
     if (index < 0) return fail(res, 404, "Không tìm thấy dữ liệu");
+    const item = list[index];
+    if (resource === "majors" && db.classes?.some((x) => String(x.majorId) === id))
+      return fail(res, 409, "Không thể xóa chuyên ngành đang có lớp học");
+    if (resource === "classes" && db.students?.some((x) => String(x.classId) === id))
+      return fail(res, 409, "Không thể xóa lớp học đang có học viên");
+    if (resource === "tieuDoan" && db.daiDoi?.some((x) => String(x.idTieuDoan) === id))
+      return fail(res, 409, "Không thể xóa Tiểu đoàn đang có Đại đội trực thuộc");
+    if (resource === "daiDoi" && (db.classes?.some((x) => String(x.daiDoiId) === id) || db.students?.some((x) => String(x.daiDoiId) === id)))
+      return fail(res, 409, "Không thể xóa Đại đội đang có lớp học hoặc học viên");
+    if (resource === "chucVu" && db.students?.some((x) => x.chucVu === item.name))
+      return fail(res, 409, "Không thể xóa chức vụ đang được học viên sử dụng");
+    if (resource === "ranks" && (db.students?.some((x) => x.capBac === item.name) || db.rankRequests?.some((x) => x.currentRank === item.name || x.proposedRank === item.name)))
+      return fail(res, 409, "Không thể xóa cấp bậc đang được sử dụng");
     list.splice(index, 1);
     writeDb(db);
     return json(res, 200, {});

@@ -103,7 +103,7 @@ export default function PreviewWord({
                       </td>
 
                       <td className="border border-black p-3">
-                        {major?.name ?? "Không xác định"}
+                        {major ? `${major.name}${major.shortName ? ` (${major.shortName})` : ""}` : "Không xác định"}
                       </td>
                     </tr>
 

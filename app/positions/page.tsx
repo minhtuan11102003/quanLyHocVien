@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { useEffect, useState } from "react";
+import { DataPagination, usePagination } from "@/components/DataPagination";
 import { ModalShell } from "@/components/ui/modal-shell";
 
 type Position = { id: string; name: string };
@@ -35,6 +36,7 @@ export default function PositionsPage() {
   const visible = items.filter((x) =>
     x.name.toLowerCase().includes(search.toLowerCase()),
   );
+  const pagination = usePagination(visible);
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-6">
@@ -88,7 +90,7 @@ export default function PositionsPage() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((x) => (
+                {pagination.currentItems.map((x) => (
                   <tr
                     key={x.id}
                     className="border-t border-slate-200 hover:bg-slate-50"
@@ -129,6 +131,7 @@ export default function PositionsPage() {
               </tbody>
             </table>
           </div>
+          <DataPagination {...pagination} totalItems={visible.length} label="chức vụ / trang" />
         </div>
 
         {open && (
@@ -137,7 +140,7 @@ export default function PositionsPage() {
             onSubmit={async (e) => {
               e.preventDefault();
               const name = String(new FormData(e.currentTarget).get("name"));
-              await fetch(`${API}/chucVu${edit ? `/${edit.id}` : ""}`, {
+              const response = await fetch(`${API}/chucVu${edit ? `/${edit.id}` : ""}`, {
                 method: edit ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -145,6 +148,7 @@ export default function PositionsPage() {
                   name,
                 }),
               });
+              if (!response.ok) return alert((await response.json().catch(() => null))?.error || "Không thể lưu chức vụ.");
               setOpen(false);
               load();
             }}

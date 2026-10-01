@@ -72,7 +72,7 @@ export default function StudentDetail({ student, majors, classes, quanKhu = [], 
       description: "Các liên kết quản lý hiện tại",
       rows: [
         { label: "Cấp bậc", value: student.capBac }, { label: "Chức vụ", value: student.chucVu },
-        { label: "Ngành đào tạo", value: major?.name }, { label: "Lớp học", value: classItem?.name },
+        { label: "Ngành đào tạo", value: major ? `${major.name}${major.shortName ? ` (${major.shortName})` : ""}` : undefined }, { label: "Lớp học", value: classItem?.name },
         { label: "Quân khu", value: qk?.nameQuanKhu }, { label: "Sư đoàn/Lữ đoàn", value: loadingUnits ? "Đang tải..." : unit ? `${unit.type} ${unit.name}` : undefined },
         { label: "Tiểu đoàn", value: battalion?.nameTieuDoan || student.tieuDoanId }, { label: "Đại đội", value: company?.nameDaiDoi || student.donVi || student.daiDoiId },
         { label: "Đối tượng đi đào tạo", value: student.doiTuongDaoTao }, { label: "Đơn vị cũ", value: student.donViCu },

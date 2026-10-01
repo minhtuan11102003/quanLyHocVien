@@ -239,11 +239,12 @@ export default function UnitsPage() {
                       nameDaiDoi: String(f.get("name")),
                       idTieuDoan: String(f.get("parent")),
                     };
-              await fetch(`${API}/${endpoint}${edit ? `/${edit.id}` : ""}`, {
+              const response = await fetch(`${API}/${endpoint}${edit ? `/${edit.id}` : ""}`, {
                 method: edit ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
               });
+              if (!response.ok) return alert((await response.json().catch(() => null))?.error || "Không thể lưu đơn vị.");
               setOpen(false);
               load();
             }}

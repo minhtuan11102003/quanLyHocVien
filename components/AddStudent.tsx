@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import StudentProfileExtraFields from "@/components/StudentProfileExtraFields";
+import StudentPersonalFields from "@/components/StudentPersonalFields";
 import {
   emptyStudentProfileExtra,
   type StudentProfileExtra,
@@ -234,6 +235,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
     setForm((prev) => ({
       ...prev,
       [name]: value,
+      ...(name === "donViCap2Id" ? { donViCu: value } : {}),
     }));
   };
 
@@ -305,6 +307,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
     try {
       const newStudent = {
         id: crypto.randomUUID(),
+        ...form,
 
         maSoHV: form.maSoHV.trim(),
 
@@ -384,7 +387,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
         />
       </div>
       <div>
-        <label className="field-label">Quân khu</label>
+        <label className="field-label">Quân khu đơn vị cũ</label>
         <select
           name="quanKhuId"
           value={form.quanKhuId}
@@ -393,6 +396,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
               ...prev,
               quanKhuId: e.target.value,
               donViCap2Id: "",
+              donViCu: "",
             }))
           }
           className="field-control"
@@ -406,7 +410,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
         </select>
       </div>
       <div>
-        <label className="field-label">Sư đoàn/Lữ đoàn</label>
+        <label className="field-label">Sư đoàn/Lữ đoàn đơn vị cũ</label>
         <select
           name="donViCap2Id"
           value={form.donViCap2Id}
@@ -469,7 +473,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
         <label className="field-label">Chuyên ngành</label>
         <select name="majorId" value={form.majorId} onChange={handleMajorChange} disabled={!form.daiDoiId} className="field-control disabled:bg-slate-100 disabled:text-slate-400">
           <option value="">{form.daiDoiId ? "-- Chọn chuyên ngành --" : "-- Chọn Đại đội trước --"}</option>
-          {availableMajors.map((major) => <option key={major.id} value={major.id}>{major.name}</option>)}
+          {availableMajors.map((major) => <option key={major.id} value={major.id}>{major.name}{major.shortName ? ` (${major.shortName})` : ""}</option>)}
         </select>
       </div>
       <div>
@@ -544,6 +548,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
             ))}
         </select>
       </div>
+      <StudentPersonalFields value={form} onChange={handleExtraChange} />
       <StudentProfileExtraFields value={form} onChange={handleExtraChange} />
       {/* Button */}
       <div className="sticky bottom-0 -mx-1 flex justify-end gap-3 border-t border-slate-100 bg-white/95 px-1 pt-5 backdrop-blur">

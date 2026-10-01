@@ -6,9 +6,12 @@ import RankApprovalTabs, {
 } from "@/components/RankApprovalTabs";
 import RankApprovalDetail from "@/components/RankApprovalDetail";
 import { getSession, type SessionUser } from "@/components/AuthGate";
+import { DataPagination, usePagination } from "@/components/DataPagination";
 
-type Student = { id: string; name: string; maSoHV: string; capBac: string; daiDoiId?: string };
-type CompanyUnit = { id: string; idTieuDoan?: string };
+type Student = { id: string; name: string; maSoHV: string; capBac: string; majorId: string; classId: string; daiDoiId?: string; graduationStatus?: string };
+type CompanyUnit = { id: string; nameDaiDoi?: string; idTieuDoan?: string };
+type ClassItem = { id: string; name: string; majorId: string; daiDoiId?: string };
+type Major = { id: string; name: string; shortName?: string };
 type Rank = { id: string; name: string; rankOrder: number };
 type RankRequest = {
   id: string;
@@ -34,11 +37,17 @@ export default function RankApprovalPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [ranks, setRanks] = useState<Rank[]>([]);
   const [companies, setCompanies] = useState<CompanyUnit[]>([]);
+  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [majors, setMajors] = useState<Major[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [selected, setSelected] = useState<RankRequest | null>(null);
   const [showCreate, setShowCreate] = useState(false);
-  const [studentId, setStudentId] = useState("");
+  const [companyId, setCompanyId] = useState("");
+  const [majorId, setMajorId] = useState("");
+  const [classId, setClassId] = useState("");
+  const [studentSearch, setStudentSearch] = useState("");
+  const [candidateIds, setCandidateIds] = useState<string[]>([]);
   const [requestCategory, setRequestCategory] =
     useState<(typeof categories)[number]>("Học viên");
   const [reason, setReason] = useState("");
@@ -46,11 +55,13 @@ export default function RankApprovalPage() {
   const [session, setSession] = useState<SessionUser | null>(null);
 
   const load = async () => {
-    const [r, s, ranksRes, companiesRes] = await Promise.all([
+    const [r, s, ranksRes, companiesRes, classesRes, majorsRes] = await Promise.all([
       fetch("http://localhost:3001/rankRequests"),
       fetch("http://localhost:3001/students"),
       fetch("http://localhost:3001/ranks"),
       fetch("http://localhost:3001/daiDoi"),
+      fetch("http://localhost:3001/classes"),
+      fetch("http://localhost:3001/majors"),
     ]);
     if (r.ok) setRequests(await r.json());
     if (s.ok) setStudents(await s.json());
@@ -59,6 +70,8 @@ export default function RankApprovalPage() {
       const value = await companiesRes.json();
       setCompanies(Array.isArray(value) ? value : []);
     }
+    if (classesRes.ok) setClasses(await classesRes.json());
+    if (majorsRes.ok) setMajors(await majorsRes.json());
   };
   useEffect(() => {
     setSession(getSession());
@@ -78,6 +91,7 @@ export default function RankApprovalPage() {
   const canReviewStage = (request: RankRequest) => session?.role === "admin" || (session?.role === "school" && stageOf(request) === "school" && hasPermission("approve_school"));
   const canForwardStage = (request: RankRequest) => session?.role === "battalion" && stageOf(request) === "battalion" && belongsToBattalion(request) && hasPermission("submit_school");
   const canCreateRequest = session?.role === "admin" || (session?.role === "company" && hasPermission("create_rank_request"));
+  const stageLabel = (request: RankRequest) => request.status === "approved" ? "Nhà trường đã duyệt" : request.status === "revision_requested" ? "Yêu cầu chỉnh sửa" : request.status === "rejected" ? "Đã từ chối" : stageOf(request) === "battalion" ? "Chờ Tiểu đoàn" : stageOf(request) === "school" ? "Tiểu đoàn đã chuyển · chờ Nhà trường" : "Đã hoàn tất";
 
   const counts = useMemo(
     () => ({
@@ -92,19 +106,15 @@ export default function RankApprovalPage() {
   );
   const visible = requests.filter((r) => {
     const stage = stageOf(r);
-    const stageVisible = session?.role === "admin" || (session?.role === "battalion" && stage === "battalion" && belongsToBattalion(r)) || (session?.role === "school" && stage === "school") || (session?.role === "company" && r.submittedBy === session.id);
+    const stageVisible = session?.role === "admin" || (session?.role === "battalion" && belongsToBattalion(r)) || (session?.role === "school" && (stage === "school" || stage === "completed")) || (session?.role === "company" && r.submittedBy === session.id);
     return r.status === status && stageVisible && (category === "all" || r.category === category) && (!search || `${r.studentName} ${r.maSoHV}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
   });
-  const eligibleStudents = students.filter((student) => session?.role !== "company" || student.daiDoiId === session.unitId);
-  const selectedStudent = eligibleStudents.find((s) => s.id === studentId);
-  const currentRank = selectedStudent
-    ? ranks.find((rank) => rank.name === selectedStudent.capBac)
-    : undefined;
-  const nextRank = currentRank
-    ? ranks
-        .filter((rank) => rank.rankOrder > currentRank.rankOrder)
-        .sort((a, b) => a.rankOrder - b.rankOrder)[0]
-    : undefined;
+  const pagination = usePagination(visible);
+  const eligibleStudents = students.filter((student) => student.graduationStatus !== "graduated" && (session?.role !== "company" || student.daiDoiId === session.unitId));
+  const availableMajors = majors.filter((major) => classes.some((item) => String(item.majorId) === String(major.id) && (!companyId || String(item.daiDoiId) === String(companyId))));
+  const availableClasses = classes.filter((item) => (!companyId || String(item.daiDoiId) === String(companyId)) && (!majorId || String(item.majorId) === String(majorId)));
+  const filteredStudents = eligibleStudents.filter((student) => (!companyId || String(student.daiDoiId) === String(companyId)) && (!majorId || String(student.majorId) === String(majorId)) && (!classId || String(student.classId) === String(classId)) && (!studentSearch.trim() || `${student.name} ${student.maSoHV}`.toLocaleLowerCase().includes(studentSearch.trim().toLocaleLowerCase())));
+  const selectedCandidates = filteredStudents.filter((student) => candidateIds.includes(student.id));
 
   const toggleSelected = (id: string) =>
     setSelectedIds((prev) =>
@@ -144,31 +154,18 @@ export default function RankApprovalPage() {
   const createRequest = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!canCreateRequest) return alert("Chỉ Đại đội hoặc Admin được lập yêu cầu nâng quân hàm.");
-    if (!selectedStudent || !nextRank || !reason.trim())
-      return alert("Chọn học viên đủ điều kiện và nhập căn cứ nâng cấp.");
-    const payload: RankRequest = {
-      id: crypto.randomUUID(),
-      studentId: selectedStudent.id,
-      studentName: selectedStudent.name,
-      maSoHV: selectedStudent.maSoHV,
-      category: requestCategory,
-      currentRank: selectedStudent.capBac,
-      proposedRank: nextRank.name,
-      reason: reason.trim(),
-      submittedAt: new Date().toISOString(),
-      status: "pending",
-      approvalStage: "battalion",
-      submittedBy: session?.id,
-      submittedByRole: session?.role,
-    };
-    const res = await fetch("http://localhost:3001/rankRequests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) return alert("Không thể tạo hồ sơ");
+    if (!selectedCandidates.length || !reason.trim()) return alert("Chọn ít nhất một học viên và nhập căn cứ nâng cấp.");
+    const invalid = selectedCandidates.filter((student) => !ranks.some((rank) => rank.rankOrder > (ranks.find((rank) => rank.name === student.capBac)?.rankOrder ?? Number.MAX_SAFE_INTEGER)));
+    if (invalid.length) return alert(`Không tìm thấy cấp bậc kế tiếp cho: ${invalid.map((student) => student.name).join(", ")}.`);
+    const responses = await Promise.all(selectedCandidates.map((student) => {
+      const currentRank = ranks.find((rank) => rank.name === student.capBac)!;
+      const nextRank = ranks.filter((rank) => rank.rankOrder > currentRank.rankOrder).sort((a, b) => a.rankOrder - b.rankOrder)[0];
+      const payload: RankRequest = { id: crypto.randomUUID(), studentId: student.id, studentName: student.name, maSoHV: student.maSoHV, category: requestCategory, currentRank: student.capBac, proposedRank: nextRank.name, reason: reason.trim(), submittedAt: new Date().toISOString(), status: "pending", approvalStage: "battalion", submittedBy: session?.id, submittedByRole: session?.role };
+      return fetch("http://localhost:3001/rankRequests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    }));
+    if (responses.some((response) => !response.ok)) return alert("Có hồ sơ không thể tạo. Vui lòng kiểm tra lại dữ liệu.");
     setShowCreate(false);
-    setStudentId("");
+    setCandidateIds([]); setCompanyId(""); setMajorId(""); setClassId(""); setStudentSearch("");
     setReason("");
     await load();
     setStatus("pending");
@@ -253,7 +250,7 @@ export default function RankApprovalPage() {
           + Lập hồ sơ
         </button>}
       </div>
-      <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">{session?.role === "company" ? "Đại đội: hồ sơ của bạn sẽ chờ Tiểu đoàn chuyển lên Nhà trường." : session?.role === "battalion" ? "Tiểu đoàn: chỉ hiển thị hồ sơ chờ chuyển lên Nhà trường; không có quyền phê duyệt." : session?.role === "school" ? "Nhà trường: đây là cấp phê duyệt cuối cùng." : "Admin: có thể xem và xử lý toàn bộ luồng."}</div>
+      <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">{session?.role === "company" ? "Đại đội: theo dõi hồ sơ của mình đang chờ Tiểu đoàn, đã chuyển Nhà trường hay đã duyệt." : session?.role === "battalion" ? "Tiểu đoàn: xem toàn bộ hồ sơ thuộc đơn vị; chỉ chuyển các hồ sơ đang chờ cấp mình lên Nhà trường." : session?.role === "school" ? "Nhà trường: xem hồ sơ đã được chuyển lên và kết quả phê duyệt cuối." : "Admin: có thể xem và xử lý toàn bộ luồng."}</div>
       <RankApprovalTabs active={status} counts={counts} onChange={setStatus} />
       <div className="my-4 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <input
@@ -318,12 +315,13 @@ export default function RankApprovalPage() {
               <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Học viên</th>
               <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Đối tượng</th>
               <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Cấp bậc</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Tiến độ</th>
               <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Ngày gửi</th>
               <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            {visible.map((item) => (
+            {pagination.currentItems.map((item) => (
               <tr key={item.id} className="transition hover:bg-slate-50">
                 <td className="p-3 text-sm text-slate-700">
                   <input
@@ -340,6 +338,7 @@ export default function RankApprovalPage() {
                 <td className="p-3 text-sm text-slate-700">
                   {item.currentRank} → {item.proposedRank}
                 </td>
+                <td className="p-3 text-sm text-slate-700">{stageLabel(item)}</td>
                 <td className="p-3 text-sm text-slate-700">
                   {new Date(item.submittedAt).toLocaleDateString("vi-VN")}
                 </td>
@@ -355,7 +354,7 @@ export default function RankApprovalPage() {
             ))}
             {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-gray-500">
+                <td colSpan={7} className="p-8 text-center text-gray-500">
                   Không có hồ sơ
                 </td>
               </tr>
@@ -363,6 +362,7 @@ export default function RankApprovalPage() {
           </tbody>
         </table>
       </div>
+      <DataPagination {...pagination} totalItems={visible.length} label="hồ sơ / trang" />
       {selected && (
         <Modal onClose={() => setSelected(null)}>
           <RankApprovalDetail
@@ -380,18 +380,13 @@ export default function RankApprovalPage() {
         <Modal onClose={() => setShowCreate(false)}>
           <form onSubmit={createRequest} className="space-y-4 p-5">
             <h2 className="text-xl font-bold">Lập hồ sơ nâng cấp</h2>
-            <select
-              value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
-              className="w-full rounded border p-2"
-            >
-              <option value="">-- Chọn học viên --</option>
-              {eligibleStudents.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} - {s.capBac}
-                </option>
-              ))}
-            </select>
+            <div className="grid gap-3 md:grid-cols-3">
+              <select value={companyId} onChange={(e) => { setCompanyId(e.target.value); setMajorId(""); setClassId(""); setCandidateIds([]); }} className="field-control"><option value="">-- Chọn Đại đội --</option>{companies.filter((company) => session?.role !== "company" || company.id === session.unitId).map((company) => <option key={company.id} value={company.id}>{company.nameDaiDoi || company.id}</option>)}</select>
+              <select value={majorId} disabled={!companyId} onChange={(e) => { setMajorId(e.target.value); setClassId(""); setCandidateIds([]); }} className="field-control"><option value="">-- Chọn chuyên ngành --</option>{availableMajors.map((major) => <option key={major.id} value={major.id}>{major.name}{major.shortName ? ` (${major.shortName})` : ""}</option>)}</select>
+              <select value={classId} disabled={!majorId} onChange={(e) => { setClassId(e.target.value); setCandidateIds([]); }} className="field-control"><option value="">Tất cả lớp học</option>{availableClasses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+            </div>
+            <input value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} placeholder="Tìm tên hoặc mã học viên..." className="field-control" />
+            <div className="overflow-hidden rounded-xl border"><div className="flex items-center justify-between bg-slate-50 p-3"><span className="text-sm font-semibold">Học viên ({selectedCandidates.length}/{filteredStudents.length} đã chọn)</span><button type="button" onClick={() => setCandidateIds(filteredStudents.length && filteredStudents.every((student) => candidateIds.includes(student.id)) ? [] : filteredStudents.map((student) => student.id))} className="text-sm font-semibold text-blue-700">{filteredStudents.length && filteredStudents.every((student) => candidateIds.includes(student.id)) ? "Bỏ chọn tất cả" : "Chọn tất cả"}</button></div>{majorId ? <div className="max-h-56 overflow-y-auto">{filteredStudents.map((student) => { const current = ranks.find((rank) => rank.name === student.capBac); const next = current && ranks.filter((rank) => rank.rankOrder > current.rankOrder).sort((a, b) => a.rankOrder - b.rankOrder)[0]; return <label key={student.id} className="flex items-center gap-3 border-t p-3"><input type="checkbox" checked={candidateIds.includes(student.id)} disabled={!next} onChange={() => setCandidateIds((items) => items.includes(student.id) ? items.filter((id) => id !== student.id) : [...items, student.id])} /><span className="flex-1"><b>{student.name}</b><span className="ml-2 text-xs text-slate-500">{student.maSoHV}</span></span><span className="text-sm text-slate-600">{student.capBac} → {next?.name || "Không có bậc kế tiếp"}</span></label>; })}</div> : <p className="p-4 text-sm text-slate-500">Chọn Đại đội và Chuyên ngành để xem học viên.</p>}</div>
             <select
               value={requestCategory}
               onChange={(e) =>
@@ -403,14 +398,6 @@ export default function RankApprovalPage() {
                 <option key={c}>{c}</option>
               ))}
             </select>
-            <p className="text-sm text-gray-600">
-              Cấp đề nghị:{" "}
-              <b>
-                {selectedStudent
-                  ? `${selectedStudent.capBac} → ${nextRank?.name ?? "Không có bậc kế tiếp"}`
-                  : "-"}
-              </b>
-            </p>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}

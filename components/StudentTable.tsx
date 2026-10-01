@@ -134,7 +134,7 @@ export default function StudentTable({
                   {/* NGÀNH */}
 
                   <td className="px-6 py-4">
-                    {nganh?.name ?? "Không xác định"}
+                    {nganh ? `${nganh.name}${nganh.shortName ? ` (${nganh.shortName})` : ""}` : "Không xác định"}
                   </td>
 
                   {/* LỚP */}

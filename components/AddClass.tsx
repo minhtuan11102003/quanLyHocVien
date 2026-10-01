@@ -94,7 +94,7 @@ export default function AddClassComponent({ onClose }: AddClassProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5 p-5">
-      <h2 className="text-2xl font-bold">Thêm chuyên ngành</h2>
+      <h2 className="text-2xl font-bold">Thêm lớp học</h2>
 
       {/* =========================
           NGÀNH ĐÀO TẠO
@@ -112,7 +112,7 @@ export default function AddClassComponent({ onClose }: AddClassProps) {
 
           {majors.map((major) => (
             <option key={major.id} value={major.id}>
-              {major.name}
+              {major.name}{major.shortName ? ` (${major.shortName})` : ""}
             </option>
           ))}
         </select>

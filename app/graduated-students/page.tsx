@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { DataPagination, usePagination } from "@/components/DataPagination";
 import type {
   Student,
   ClassItem,
@@ -69,6 +70,7 @@ export default function GraduatedStudentsPage() {
     const x = units.find((u) => `${u.source}:${u.id}` === id || u.id === id);
     return x ? `${x.type} ${x.name}` : "Chưa cập nhật";
   };
+  const pagination = usePagination(visible);
   return (
     <div className="p-4">
       <div className="mb-5">
@@ -109,12 +111,12 @@ export default function GraduatedStudentsPage() {
             </tr>
           </thead>
           <tbody>
-            {visible.map((s) => (
+            {pagination.currentItems.map((s) => (
               <tr key={s.id} className="border-t hover:bg-gray-50">
                 <td className="p-3">{s.maSoHV}</td>
                 <td className="p-3 font-medium">{s.name}</td>
                 <td className="p-3">
-                  {majors.find((m) => m.id === s.majorId)?.name || "-"}
+                  {(() => { const major = majors.find((m) => m.id === s.majorId); return major ? `${major.name}${major.shortName ? ` (${major.shortName})` : ""}` : "-"; })()}
                 </td>
                 <td className="p-3">
                   {classes.find((c) => String(c.id) === String(s.classId))
@@ -145,6 +147,7 @@ export default function GraduatedStudentsPage() {
           </tbody>
         </table>
       </div>
+      <div className="rounded-b-xl border border-t-0 bg-white shadow-sm"><DataPagination {...pagination} totalItems={visible.length} label="học viên / trang" /></div>
     </div>
   );
 }
