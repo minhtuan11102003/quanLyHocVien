@@ -135,6 +135,14 @@ export default function Home() {
     const byCompany = selectedDonVi === "all" || String(item.daiDoiId || "") === String(selectedDonVi);
     return byMajor && byCompany;
   });
+  const availableMajors = nganhDaoTao.filter((major) =>
+    classes.some(
+      (item) =>
+        String(item.majorId) === String(major.id) &&
+        (selectedDonVi === "all" ||
+          String(item.daiDoiId || "") === String(selectedDonVi)),
+    ),
+  );
 
   // =====================================================
   // FILTER STUDENT
@@ -363,7 +371,15 @@ export default function Home() {
 
     setSelectedDonVi(value);
 
-    // Khi đổi đại đội, chỉ giữ lại ngành/lớp thuộc đại đội đó.
+    // Đại đội thay đổi thì chỉ được chọn chuyên ngành và lớp của đại đội đó.
+    const currentMajorStillAvailable =
+      selectedMajorId === "all" ||
+      classes.some(
+        (item) =>
+          String(item.majorId) === String(selectedMajorId) &&
+          (value === "all" || String(item.daiDoiId || "") === String(value)),
+      );
+    if (!currentMajorStillAvailable) setSelectedMajorId("all");
     setSelectedClassId("all");
 
     // Reset page
@@ -420,7 +436,7 @@ export default function Home() {
         selectedDonVi={selectedDonVi}
         selectedMajorId={selectedMajorId}
         selectedClassId={selectedClassId}
-        majors={nganhDaoTao}
+        majors={availableMajors}
         filteredClasses={filteredClasses}
         companies={companies}
         onSearchChange={handleSearch}

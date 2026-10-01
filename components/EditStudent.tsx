@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import StudentProfileExtraFields from "@/components/StudentProfileExtraFields";
+import StudentPersonalFields from "@/components/StudentPersonalFields";
 import { emptyStudentProfileExtra, type StudentProfileExtra } from "@/app/types/student";
 
 type Student = {
@@ -208,6 +209,8 @@ export default function EditStudentComponent({
     if (!selectedDaiDoi) return alert("Vui lòng chọn đại đội");
 
     const updateStudent: Student = {
+      // Giữ các trường mở rộng, sau đó luôn ưu tiên giá trị vừa chỉnh ở form.
+      ...extra,
       id: student.id,
       maSoHV: student.maSoHV,
       name: name.trim(),
@@ -226,7 +229,6 @@ export default function EditStudentComponent({
       daiDoiId: selectedDaiDoi,
       originQuanKhuId: student.originQuanKhuId || student.quanKhuId,
       originDonViCap2Id: student.originDonViCap2Id || student.donViCap2Id,
-      ...extra,
     };
 
     try {
@@ -281,7 +283,7 @@ export default function EditStudentComponent({
       </div>
 
       {/* NGÀNH ĐÀO TẠO — shown after Đại đội via flex order */}
-      <div className="order-20 mb-4">
+      <div className="order-[5] mb-4">
         <label className="field-label">Ngành đào tạo</label>
         <select
           value={selectedMajor}
@@ -292,14 +294,14 @@ export default function EditStudentComponent({
           <option value="">{selectedDaiDoi ? "-- Chọn ngành --" : "-- Chọn Đại đội trước --"}</option>
           {availableMajors.map((major) => (
             <option key={major.id} value={String(major.id)}>
-              {major.name}
+              {major.name}{major.shortName ? ` (${major.shortName})` : ""}
             </option>
           ))}
         </select>
       </div>
 
       {/* LỚP HỌC */}
-      <div className="order-21 mb-4">
+      <div className="order-[6] mb-4">
         <label className="field-label">Chọn lớp học</label>
         <select
           disabled={!selectedMajor || !selectedDaiDoi}
@@ -324,8 +326,8 @@ export default function EditStudentComponent({
       </div>
 
       {/* QUÂN KHU VÀ ĐƠN VỊ CẤP 2 */}
-      <div className="order-30 mb-4">
-        <label className="field-label">Quân khu</label>
+      <div className="order-[1] mb-4">
+        <label className="field-label">Quân khu đơn vị cũ</label>
         <select
           value={selectedQuanKhu}
           onChange={(e) => {
@@ -342,8 +344,8 @@ export default function EditStudentComponent({
           ))}
         </select>
       </div>
-      <div className="order-31 mb-4">
-        <label className="field-label">Sư đoàn/Lữ đoàn</label>
+      <div className="order-[2] mb-4">
+        <label className="field-label">Sư đoàn/Lữ đoàn đơn vị cũ</label>
         <select
           value={selectedSubUnit}
           onChange={(e) => setSelectedSubUnit(e.target.value)}
@@ -369,7 +371,7 @@ export default function EditStudentComponent({
       </div>
 
       {/* TIỂU ĐOÀN / ĐẠI ĐỘI */}
-      <div className="order-32 mb-4">
+      <div className="order-[3] mb-4">
         <label className="field-label">Tiểu đoàn</label>
         <select
           value={selectedTieuDoan}
@@ -387,7 +389,7 @@ export default function EditStudentComponent({
           ))}
         </select>
       </div>
-      <div className="mb-4">
+      <div className="order-[4] mb-4">
         <label className="field-label">Đại đội quản lý lớp</label>
         <select
           value={selectedDaiDoi}
@@ -411,7 +413,7 @@ export default function EditStudentComponent({
       </div>
 
       {/* CHỨC VỤ */}
-      <div className="mb-4">
+      <div className="order-[7] mb-4">
         <label className="field-label">Chức vụ</label>
         <select
           value={selectedChucVu}
@@ -428,7 +430,7 @@ export default function EditStudentComponent({
       </div>
 
       {/* DÂN TỘC */}
-      <div className="mb-4">
+      <div className="order-[8] mb-4">
         <label className="field-label">Dân tộc</label>
         <input
           type="text"
@@ -440,7 +442,7 @@ export default function EditStudentComponent({
       </div>
 
       {/* NGÀY SINH */}
-      <div className="mb-4">
+      <div className="order-[9] mb-4">
         <label className="field-label">Ngày sinh</label>
         <input
           type="date"
@@ -451,7 +453,7 @@ export default function EditStudentComponent({
       </div>
 
       {/* CẤP BẬC */}
-      <div className="mb-6">
+      <div className="order-[10] mb-6">
         <label className="field-label">Cấp bậc</label>
         <select
           value={selectedCapBac}
@@ -469,9 +471,10 @@ export default function EditStudentComponent({
         </select>
       </div>
 
-      <StudentProfileExtraFields value={extra} onChange={handleExtraChange} />
+      <div className="order-[11]"><StudentPersonalFields value={extra} onChange={handleExtraChange} /></div>
+      <div className="order-[12]"><StudentProfileExtraFields value={extra} onChange={handleExtraChange} /></div>
       {/* BUTTON */}
-      <div className="sticky bottom-0 -mx-1 flex justify-end gap-3 border-t border-slate-100 bg-white/95 px-1 pt-5 backdrop-blur">
+      <div className="order-[13] sticky bottom-0 -mx-1 flex justify-end gap-3 border-t border-slate-100 bg-white/95 px-1 pt-5 backdrop-blur">
         <button
           type="button"
           onClick={onClose}

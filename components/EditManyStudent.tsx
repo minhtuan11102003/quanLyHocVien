@@ -267,7 +267,7 @@ export default function EditManyStudent({
                   </div>
 
                   <div className="mt-1 text-sm">
-                    Ngành: {major?.name || "Chưa xác định"}
+                    Ngành: {major ? `${major.name}${major.shortName ? ` (${major.shortName})` : ""}` : "Chưa xác định"}
                   </div>
 
                   <div className="text-sm">
@@ -301,7 +301,7 @@ export default function EditManyStudent({
 
                 {majors.map((major) => (
                   <SelectItem key={String(major.id)} value={String(major.id)}>
-                    {major.name}
+                    {major.name}{major.shortName ? ` (${major.shortName})` : ""}
                   </SelectItem>
                 ))}
               </SelectGroup>

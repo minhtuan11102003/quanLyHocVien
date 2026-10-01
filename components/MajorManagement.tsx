@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 import { useEffect, useState } from "react";
+import { DataPagination, usePagination } from "@/components/DataPagination";
 type Major = { id: string; name: string; shortName: string };
 type ClassRecord = { majorId: string };
 export default function MajorManagement({
@@ -31,6 +32,7 @@ export default function MajorManagement({
   const visible = items.filter((x) =>
     `${x.name} ${x.shortName}`.toLowerCase().includes(search.toLowerCase()),
   );
+  const pagination = usePagination(visible);
   return (
     <div>
       <div className="mb-4 flex gap-3">
@@ -60,7 +62,7 @@ export default function MajorManagement({
             </tr>
           </thead>
           <tbody>
-            {visible.map((x) => (
+            {pagination.currentItems.map((x) => (
               <tr key={x.id} className="border-t">
                 <td className="p-3">{x.name}</td>
                 <td className="p-3">{x.shortName}</td>
@@ -86,6 +88,7 @@ export default function MajorManagement({
           </tbody>
         </table>
       </div>
+      <div className="rounded-b-xl border border-t-0 bg-white"><DataPagination {...pagination} totalItems={visible.length} label="chuyên ngành / trang" /></div>
       {open && (
         <form
           onSubmit={async (e) => {

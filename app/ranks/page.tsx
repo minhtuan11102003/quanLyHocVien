@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import RankDetail from "@/components/RankDetail";
 import RankForm, { type Rank } from "@/components/RankForm";
+import { DataPagination, usePagination } from "@/components/DataPagination";
 
 type GroupFilter = "all" | Rank["group"];
 
@@ -46,6 +47,7 @@ export default function RankManagementPage() {
       )
       .sort((a, b) => a.rankOrder - b.rankOrder);
   }, [group, ranks, search]);
+  const pagination = usePagination(visibleRanks);
 
   const removeRank = async (rank: Rank) => {
     if (!window.confirm(`Bạn có chắc muốn xóa cấp bậc “${rank.name}”?`)) return;
@@ -201,7 +203,7 @@ export default function RankManagementPage() {
                     </td>
                   </tr>
                 ) : (
-                  visibleRanks.map((rank) => (
+                  pagination.currentItems.map((rank) => (
                     <tr
                       key={rank.id}
                       className="border-t border-slate-200 hover:bg-slate-50"
@@ -243,6 +245,7 @@ export default function RankManagementPage() {
               </tbody>
             </table>
           </div>
+          <DataPagination {...pagination} totalItems={visibleRanks.length} label="cấp bậc / trang" />
         </div>
 
         {isFormOpen && (

@@ -115,11 +115,11 @@ export default function ClassManagement() {
   // PAGINATION
   // =========================
 
-  const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
+  const totalPages = itemsPerPage === 0 ? 1 : Math.max(1, Math.ceil(filteredClasses.length / itemsPerPage));
 
   const startIndex = (currentPage - 1) * itemsPerPage;
 
-  const endIndex = startIndex + itemsPerPage;
+  const endIndex = itemsPerPage === 0 ? filteredClasses.length : startIndex + itemsPerPage;
 
   const currentClasses = filteredClasses.slice(startIndex, endIndex);
 
@@ -363,7 +363,7 @@ export default function ClassManagement() {
 
               {nganhDaoTao.map((major) => (
                 <option key={major.id} value={major.id}>
-                  {major.name}
+                  {major.name}{major.shortName ? ` (${major.shortName})` : ""}
                 </option>
               ))}
             </select>
@@ -458,7 +458,7 @@ export default function ClassManagement() {
                         </td>
                         <td className="px-6 py-4">
                           <span className="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
-                            {major?.name ?? "Không xác định"}
+                            {major ? `${major.name}${major.shortName ? ` (${major.shortName})` : ""}` : "Không xác định"}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -503,12 +503,13 @@ export default function ClassManagement() {
               >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
-                <option value={20}>20</option>
+                <option value={15}>15</option>
+                <option value={0}>Tất cả</option>
               </select>
               <span>lớp / trang</span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            {itemsPerPage !== 0 && <div className="flex flex-wrap items-center gap-2">
               <button
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage((prev) => prev - 1)}
@@ -551,7 +552,7 @@ export default function ClassManagement() {
               >
                 Sau
               </button>
-            </div>
+            </div>}
           </div>
         </div>
       </div>

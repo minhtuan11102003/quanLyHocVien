@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ModalShell } from "@/components/ui/modal-shell";
+import { DataPagination, usePagination } from "@/components/DataPagination";
 
 type Region = {
   id: string;
@@ -99,6 +100,7 @@ export default function MilitaryUnitsPage() {
       ),
     [units, parent, search],
   );
+  const pagination = usePagination<Region | Unit>(tab === "regions" ? visibleRegions : visibleUnits);
 
   const remove = async (item: Region | Unit) => {
     const isRegion = "nameQuanKhu" in item;
@@ -266,7 +268,7 @@ export default function MilitaryUnitsPage() {
                     </td>
                   </tr>
                 ) : tab === "regions" ? (
-                  visibleRegions.map((item) => (
+                  pagination.currentItems.filter((item): item is Region => "nameQuanKhu" in item).map((item) => (
                     <tr
                       key={`qk:${item.id}`}
                       className="border-t border-slate-200 hover:bg-slate-50"
@@ -300,7 +302,7 @@ export default function MilitaryUnitsPage() {
                     </tr>
                   ))
                 ) : (
-                  visibleUnits.map((item) => (
+                  pagination.currentItems.filter((item): item is Unit => "source" in item).map((item) => (
                     <tr
                       key={`${item.source}:${item.id}`}
                       className="border-t border-slate-200 hover:bg-slate-50"
@@ -350,6 +352,7 @@ export default function MilitaryUnitsPage() {
               </tbody>
             </table>
           </div>
+          <DataPagination {...pagination} totalItems={(tab === "regions" ? visibleRegions : visibleUnits).length} label={`${tab === "regions" ? "Quân khu" : "đơn vị"} / trang`} />
         </div>
 
         {open && (

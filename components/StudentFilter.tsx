@@ -9,7 +9,7 @@ type StudentFilterProps = {
   selectedDonVi: string;
   selectedMajorId: string | "all";
   selectedClassId: string | "all";
-  majors: { id: string; name: string }[];
+  majors: { id: string; name: string; shortName?: string }[];
   filteredClasses: ClassItem[];
   companies: { id: string; nameDaiDoi: string }[];
 
@@ -72,7 +72,7 @@ export default function StudentFilter({
         className="field-control mt-1"
       >
         <option value="all">Tất cả chuyên ngành</option>
-        {majors.map((major) => <option key={major.id} value={major.id}>{major.name}</option>)}
+        {majors.map((major) => <option key={major.id} value={major.id}>{major.name}{major.shortName ? ` (${major.shortName})` : ""}</option>)}
       </select></label>
 
       {/* LỚP */}

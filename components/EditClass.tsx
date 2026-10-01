@@ -52,6 +52,10 @@ export default function EditClassComponent({
       alert("Vui lòng chọn ngành");
       return;
     }
+    if (!daiDoiId) {
+      alert("Vui lòng chọn Đại đội quản lý");
+      return;
+    }
 
     try {
       const res = await fetch(`http://localhost:3001/classes/${classItem.id}`, {
@@ -100,7 +104,7 @@ export default function EditClassComponent({
 
           {majors.map((major) => (
             <option key={major.id} value={major.id}>
-              {major.name}
+              {major.name}{major.shortName ? ` (${major.shortName})` : ""}
             </option>
           ))}
         </select>

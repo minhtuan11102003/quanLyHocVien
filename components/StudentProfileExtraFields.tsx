@@ -11,19 +11,7 @@ type Field = {
   type?: "date" | "tel";
 };
 const groups: { title: string; fields: Field[] }[] = [
-  {
-    title: "Thông tin cá nhân",
-    fields: [
-      { key: "gioiTinh", label: "Giới tính" },
-      { key: "tonGiao", label: "Tôn giáo" },
-      { key: "sucKhoe", label: "Sức khỏe" },
-      { key: "vanHoa", label: "Trình độ văn hóa" },
-      { key: "ngayNhapNgu", label: "Ngày nhập ngũ", type: "date" },
-      { key: "donViCu", label: "Đơn vị cũ" },
-      { key: "soHieuQuanNhan", label: "Số hiệu quân nhân" },
-      { key: "soTheBHYT", label: "Số thẻ BHYT" },
-    ],
-  },
+  { title: "Thông tin quân nhân", fields: [{ key: "ngayNhapNgu", label: "Ngày nhập ngũ", type: "date" }, { key: "soHieuQuanNhan", label: "Số hiệu quân nhân" }, { key: "soTheBHYT", label: "Số thẻ BHYT" }] },
   {
     title: "Đoàn, Đảng và giấy tờ",
     fields: [
