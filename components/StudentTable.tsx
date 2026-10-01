@@ -45,13 +45,13 @@ export default function StudentTable({
     students.every((student) => selectedIds.includes(student.id));
 
   return (
-    <div className="mx-2 mt-4 w-full min-w-0 max-h-[calc(100vh-260px)] max-w-full overflow-auto rounded-xl border border-gray-200 bg-white shadow-md">
+    <div className="mx-4 mt-5 w-[calc(100%-2rem)] min-w-0 max-h-[calc(100vh-280px)] max-w-full overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm sm:mx-6 sm:w-[calc(100%-3rem)]">
       <table className="w-full min-w-max border-collapse">
         {/* HEADER */}
 
-        <thead className="bg-gray-200">
+        <thead className="sticky top-0 z-10 bg-slate-50">
           <tr>
-            <th className="px-4 py-4 text-left text-xl font-bold">
+            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
               <input
                 type="checkbox"
                 checked={isAllSelected}
@@ -60,27 +60,27 @@ export default function StudentTable({
               />
             </th>
 
-            <th className="py-4 text-left text-xl font-bold">STT</th>
+            <th className="py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">STT</th>
 
-            <th className="px-4 py-4 text-left text-xl font-bold">Mã Số HV</th>
+            <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Mã Số HV</th>
 
-            <th className="px-6 py-4 text-left text-xl font-bold">
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
               Ngành đào tạo
             </th>
 
-            <th className="px-6 py-4 text-left text-xl font-bold">Lớp học</th>
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Lớp học</th>
 
-            <th className="px-6 py-4 text-left text-xl font-bold">
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
               Tên học viên
             </th>
 
-            <th className="px-6 py-4 text-left text-xl font-bold">Quân khu</th>
-            <th className="px-6 py-4 text-left text-xl font-bold">Đơn vị cũ</th>
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Quân khu</th>
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Đơn vị cũ</th>
 
-            <th className="px-6 py-4 text-left text-xl font-bold">Cấp bậc</th>
-            {/* <th className="px-6 py-4 text-left text-xl font-bold">Ngày sinh</th> */}
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Cấp bậc</th>
+            {/* <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Ngày sinh</th> */}
 
-            <th className="px-6 py-4 text-left text-xl font-bold">Thao tác</th>
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Thao tác</th>
           </tr>
         </thead>
 
@@ -101,7 +101,7 @@ export default function StudentTable({
 
               const lop = classes.find(
                 (item) =>
-                  item.id == student.classId && item.majorId == student.majorId,
+                  String(item.id) === String(student.classId) && String(item.majorId) === String(student.majorId),
               );
 
               return (

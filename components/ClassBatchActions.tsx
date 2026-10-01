@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import type { ClassItem, Student } from "@/app/types/student";
+import { getSession } from "@/components/AuthGate";
 
 type Rank = { id: string; name: string; rankOrder: number };
 type Region = { id: string; nameQuanKhu: string };
@@ -119,6 +120,7 @@ export default function ClassBatchActions({
     setSaving(true);
     try {
       if (mode === "rank") {
+        const session = getSession();
         const requests = selectedStudents
           .filter((s) => rankByStudent[s.id] && rankByStudent[s.id] !== "keep")
           .map((s) => ({
@@ -132,6 +134,9 @@ export default function ClassBatchActions({
             reason: "Đề nghị nâng cấp theo lớp",
             submittedAt: new Date().toISOString(),
             status: "pending",
+            approvalStage: "battalion",
+            submittedBy: session?.id,
+            submittedByRole: session?.role,
           }));
         if (!requests.length)
           return alert("Chưa chọn cấp bậc mới cho học viên nào");

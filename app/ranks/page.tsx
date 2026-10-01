@@ -50,6 +50,18 @@ export default function RankManagementPage() {
   const removeRank = async (rank: Rank) => {
     if (!window.confirm(`Bạn có chắc muốn xóa cấp bậc “${rank.name}”?`)) return;
     try {
+      const [studentsResponse, requestsResponse] = await Promise.all([
+        fetch("http://localhost:3001/students"),
+        fetch("http://localhost:3001/rankRequests"),
+      ]);
+      const students = studentsResponse.ok ? await studentsResponse.json() : [];
+      const requests = requestsResponse.ok ? await requestsResponse.json() : [];
+      const usedByStudent = Array.isArray(students) && students.some((student: { capBac?: string }) => student.capBac === rank.name);
+      const usedByRequest = Array.isArray(requests) && requests.some((request: { currentRank?: string; proposedRank?: string }) => request.currentRank === rank.name || request.proposedRank === rank.name);
+      if (usedByStudent || usedByRequest) {
+        alert("Không thể xóa cấp bậc đang được học viên hoặc hồ sơ nâng cấp sử dụng.");
+        return;
+      }
       const response = await fetch(`http://localhost:3001/ranks/${rank.id}`, {
         method: "DELETE",
       });

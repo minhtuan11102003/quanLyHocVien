@@ -7,7 +7,8 @@
     "json-server": "json-server --watch db.json --port 3001",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "api": "node server/index.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -34,5 +35,8 @@
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=22.5.0"
   }
 }

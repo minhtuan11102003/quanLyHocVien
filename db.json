@@ -21,7 +21,7 @@
       "idTieuDoan": "td_2"
     },
     {
-      "id": "dd_5",
+      "id": "C6WqUym2n_I",
       "nameDaiDoi": "Đại đội 5",
       "idTieuDoan": "td_2"
     }
@@ -57,14 +57,14 @@
     {
       "id": "1",
       "majorId": "1",
-      "name": "A1",
-      "daiDoiId": ""
+      "daiDoiId": "dd_2",
+      "name": "A1"
     },
     {
       "id": "2",
       "majorId": "1",
-      "name": "A2",
-      "daiDoiId": ""
+      "daiDoiId": "dd_3",
+      "name": "A2"
     },
     {
       "id": "3",
@@ -75,20 +75,14 @@
     {
       "id": "VBSCSccsBGA",
       "majorId": "3",
-      "name": "K3",
-      "daiDoiId": ""
+      "daiDoiId": "dd_2",
+      "name": "K3"
     },
     {
-      "majorId": "3",
-      "name": "AS",
-      "id": "G7BiAmgWDk8",
-      "daiDoiId": ""
-    },
-    {
-      "majorId": "2",
-      "name": "A5",
       "id": "CyOW0elrEFY",
-      "daiDoiId": ""
+      "majorId": "2",
+      "daiDoiId": "C6WqUym2n_I",
+      "name": "KCL3"
     }
   ],
   "students": [
@@ -182,13 +176,33 @@
       "chucVu": "Tiểu đội trưởng ",
       "danToc": "Kinh",
       "birthDay": "2003-11-10",
-      "capBac": "Binh nhất",
+      "capBac": "Hạ sỹ",
       "quanKhuId": "qk_7",
       "donViCap2Id": "suDoan:sd_302",
       "tieuDoanId": "td_1",
       "daiDoiId": "dd_2",
       "originQuanKhuId": "qk_7",
-      "originDonViCap2Id": "suDoan:sd_302"
+      "originDonViCap2Id": "suDoan:sd_302",
+      "graduationStatus": "graduated",
+      "graduatedAt": "2026-09-30T09:25:16.680Z"
+    },
+    {
+      "id": "pa8XRVEWNlI",
+      "maSoHV": "21313",
+      "name": "dadada",
+      "majorId": "1",
+      "classId": "1",
+      "donVi": "Đại đội 1",
+      "chucVu": "Học viên",
+      "danToc": "Kinh",
+      "birthDay": "2003-11-10",
+      "capBac": "Hạ sỹ",
+      "quanKhuId": "qk_7",
+      "donViCap2Id": "luDoan:ld_75_qk7",
+      "tieuDoanId": "td_1",
+      "daiDoiId": "dd_1",
+      "originQuanKhuId": "qk_7",
+      "originDonViCap2Id": "luDoan:ld_75_qk7"
     }
   ],
   "ranks": [
@@ -433,6 +447,61 @@
       "submittedAt": "2026-09-28T13:43:34.196Z",
       "status": "approved",
       "reviewedAt": "2026-09-28T13:47:56.557Z"
+    },
+    {
+      "id": "CXxc3rYqBT0",
+      "studentId": "BHwPVNavX2A",
+      "studentName": "Nguyễn Xuân minh Tuân",
+      "maSoHV": "5454545",
+      "category": "Học viên",
+      "currentRank": "Binh nhất",
+      "proposedRank": "Trung sỹ",
+      "reason": "Đề nghị nâng cấp theo lớp",
+      "submittedAt": "2026-09-30T09:15:44.141Z",
+      "status": "approved",
+      "reviewerNote": "",
+      "reviewedAt": "2026-09-30T09:15:51.696Z"
+    },
+    {
+      "id": "Z_28HKD4xMw",
+      "studentId": "pa8XRVEWNlI",
+      "studentName": "dadada",
+      "maSoHV": "21313",
+      "category": "Học viên",
+      "currentRank": "Binh nhất",
+      "proposedRank": "Hạ sỹ",
+      "reason": "Yêu cầu lên",
+      "submittedAt": "2026-09-30T09:26:16.173Z",
+      "status": "approved",
+      "approvalStage": "school",
+      "submittedBy": "user_dd1",
+      "submittedByRole": "company",
+      "reviewerNote": "",
+      "reviewedAt": "2026-09-30T09:26:57.284Z",
+      "reviewedBy": "user_td1",
+      "reviewedByRole": "battalion"
+    },
+    {
+      "id": "EMpwzca4C1U",
+      "studentId": "pa8XRVEWNlI",
+      "studentName": "dadada",
+      "maSoHV": "21313",
+      "category": "HSQ, binh sĩ",
+      "currentRank": "Binh nhất",
+      "proposedRank": "Hạ sỹ",
+      "reason": "adasda",
+      "submittedAt": "2026-09-30T09:28:30.819Z",
+      "status": "approved",
+      "approvalStage": "completed",
+      "submittedBy": "user_dd1",
+      "submittedByRole": "company",
+      "forwardedAt": "2026-09-30T09:32:11.110Z",
+      "forwardedBy": "user_td1",
+      "forwardedByRole": "battalion",
+      "reviewerNote": "",
+      "reviewedAt": "2026-09-30T09:36:45.496Z",
+      "reviewedBy": "user_school",
+      "reviewedByRole": "school"
     }
   ],
   "quanKhu": [
@@ -1013,6 +1082,18 @@
       "fromDonViCap2Id": "suDoan:sd_395",
       "toDonViCap2Id": "suDoan:sd_395",
       "createdAt": "2026-09-28T14:10:13.030Z"
+    },
+    {
+      "id": "hdRpj3AiES8",
+      "studentId": "BHwPVNavX2A",
+      "studentName": "Nguyễn Xuân minh Tuân",
+      "maSoHV": "5454545",
+      "type": "return",
+      "fromQuanKhuId": "qk_7",
+      "toQuanKhuId": "qk_7",
+      "fromDonViCap2Id": "suDoan:sd_302",
+      "toDonViCap2Id": "suDoan:sd_302",
+      "createdAt": "2026-09-30T09:25:16.693Z"
     }
   ],
   "chucVu": [
@@ -1035,6 +1116,186 @@
     {
       "id": "4R1G6-2UDDo",
       "name": "Tiểu đội trưởng "
+    }
+  ],
+  "users": [
+    {
+      "id": "user_admin",
+      "username": "admin",
+      "name": "Quản trị viên",
+      "password": "admin123",
+      "role": "admin",
+      "unitId": "",
+      "active": true,
+      "permissions": [
+        "view_students",
+        "manage_students",
+        "create_rank_request",
+        "approve_school",
+        "manage_units",
+        "manage_permissions",
+        "manage_classes",
+        "manage_majors",
+        "manage_graduation",
+        "submit_battalion",
+        "submit_school"
+      ]
+    },
+    {
+      "id": "user_school",
+      "username": "nhatruong",
+      "name": "Nhà trường",
+      "password": "school123",
+      "role": "school",
+      "unitId": "",
+      "active": true,
+      "permissions": [
+        "view_students",
+        "manage_students",
+        "create_rank_request",
+        "approve_school",
+        "manage_units",
+        "manage_classes",
+        "manage_majors",
+        "manage_graduation"
+      ]
+    },
+    {
+      "id": "user_td1",
+      "username": "tieudoan1",
+      "name": "Chỉ huy Tiểu đoàn 1",
+      "password": "td123",
+      "role": "battalion",
+      "unitId": "td_1",
+      "active": true,
+      "permissions": [
+        "view_students",
+        "manage_students",
+        "create_rank_request",
+        "manage_units",
+        "manage_classes",
+        "manage_majors",
+        "manage_graduation",
+        "submit_school"
+      ]
+    },
+    {
+      "id": "user_dd1",
+      "username": "daidoi1",
+      "name": "Chỉ huy Đại đội 1",
+      "password": "dd123",
+      "role": "company",
+      "unitId": "dd_1",
+      "active": true,
+      "permissions": [
+        "view_students",
+        "manage_students",
+        "create_rank_request",
+        "manage_classes",
+        "manage_majors",
+        "submit_battalion"
+      ]
+    }
+  ],
+  "permissionCatalog": [
+    {
+      "id": "view_students",
+      "name": "Xem học viên",
+      "roles": [
+        "admin",
+        "school",
+        "battalion",
+        "company"
+      ]
+    },
+    {
+      "id": "manage_students",
+      "name": "Thêm/sửa/xóa học viên",
+      "roles": [
+        "admin",
+        "school",
+        "company",
+        "battalion"
+      ]
+    },
+    {
+      "id": "create_rank_request",
+      "name": "Lập yêu cầu nâng quân hàm",
+      "roles": [
+        "admin",
+        "company",
+        "battalion",
+        "school"
+      ]
+    },
+    {
+      "id": "approve_school",
+      "name": "Phê duyệt cấp Nhà trường",
+      "roles": [
+        "admin",
+        "school"
+      ]
+    },
+    {
+      "id": "manage_units",
+      "name": "Quản lý đơn vị",
+      "roles": [
+        "admin",
+        "school",
+        "battalion"
+      ]
+    },
+    {
+      "id": "manage_permissions",
+      "name": "Quản lý tài khoản và chức năng",
+      "roles": [
+        "admin"
+      ]
+    },
+    {
+      "id": "manage_classes",
+      "name": "Quản lý lớp học",
+      "roles": [
+        "admin",
+        "school",
+        "company",
+        "battalion"
+      ]
+    },
+    {
+      "id": "manage_majors",
+      "name": "Quản lý chuyên ngành",
+      "roles": [
+        "admin",
+        "school",
+        "battalion",
+        "company"
+      ]
+    },
+    {
+      "id": "manage_graduation",
+      "name": "Quản lý tốt nghiệp/điều chuyển",
+      "roles": [
+        "admin",
+        "school",
+        "battalion"
+      ]
+    },
+    {
+      "id": "submit_battalion",
+      "name": "Gửi hồ sơ lên Tiểu đoàn",
+      "roles": [
+        "admin",
+        "company"
+      ]
+    },
+    {
+      "id": "submit_school",
+      "name": "Gửi hồ sơ lên Nhà trường",
+      "roles": [
+        "admin",
+        "battalion"
+      ]
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

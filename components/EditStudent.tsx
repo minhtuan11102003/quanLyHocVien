@@ -2,6 +2,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import StudentProfileExtraFields from "@/components/StudentProfileExtraFields";
+import { emptyStudentProfileExtra, type StudentProfileExtra } from "@/app/types/student";
 
 type Student = {
   id: string;
@@ -20,6 +22,7 @@ type Student = {
   daiDoiId?: string;
   originQuanKhuId?: string;
   originDonViCap2Id?: string;
+  [key: string]: unknown;
 };
 
 type Major = { id: number | string; name: string; shortName: string };
@@ -101,6 +104,7 @@ export default function EditStudentComponent({
     student.tieuDoanId || "",
   );
   const [selectedDaiDoi, setSelectedDaiDoi] = useState(student.daiDoiId || "");
+  const [extra, setExtra] = useState<StudentProfileExtra>(() => ({ ...emptyStudentProfileExtra, ...student }));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -181,7 +185,12 @@ export default function EditStudentComponent({
     setSelectedSubUnit(student.donViCap2Id || "");
     setSelectedTieuDoan(student.tieuDoanId || "");
     setSelectedDaiDoi(student.daiDoiId || "");
+    setExtra({ ...emptyStudentProfileExtra, ...student });
   }, [student]);
+
+  const handleExtraChange = (name: keyof StudentProfileExtra, value: string) => {
+    setExtra((prev) => ({ ...prev, [name]: value }));
+  };
 
   const filteredClasses = classes.filter(
     (item) => String(item.majorId) === String(selectedMajor),
@@ -227,6 +236,7 @@ export default function EditStudentComponent({
       daiDoiId: selectedDaiDoi,
       originQuanKhuId: student.originQuanKhuId || student.quanKhuId,
       originDonViCap2Id: student.originDonViCap2Id || student.donViCap2Id,
+      ...extra,
     };
 
     try {
@@ -471,6 +481,7 @@ export default function EditStudentComponent({
         </select>
       </div>
 
+      <StudentProfileExtraFields value={extra} onChange={handleExtraChange} />
       {/* BUTTON */}
       <div className="flex justify-end gap-3">
         <button

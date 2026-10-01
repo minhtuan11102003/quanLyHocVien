@@ -11,12 +11,19 @@ type ClassItem = {
   id: string;
   majorId: string;
   name: string;
+  daiDoiId: string;
 };
 
 type NganhDaoTao = {
   id: string;
   name: string;
   shortName: string;
+};
+
+type daiDoiQuanLy = {
+  id: string;
+  nameDaiDoi: string;
+  idTieuDoan: string;
 };
 
 type PaginationItem = number | "...";
@@ -29,6 +36,7 @@ export default function ClassManagement() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
 
   const [nganhDaoTao, setNganhDaoTao] = useState<NganhDaoTao[]>([]);
+  const [daiDoi, setDaiDoi] = useState<daiDoiQuanLy[]>([]);
 
   // Modal thêm
   const [isOpen, setIsOpen] = useState(false);
@@ -54,9 +62,10 @@ export default function ClassManagement() {
 
   const fetchData = async () => {
     try {
-      const [classRes, majorRes] = await Promise.all([
+      const [classRes, majorRes, daiDoiRes] = await Promise.all([
         fetch("http://localhost:3001/classes"),
         fetch("http://localhost:3001/majors"),
+        fetch("http://localhost:3001/daiDoi"),
       ]);
 
       if (!classRes.ok || !majorRes.ok) {
@@ -65,9 +74,11 @@ export default function ClassManagement() {
 
       const classData = await classRes.json();
       const majorData = await majorRes.json();
+      const daiDoiData = await daiDoiRes.json();
 
       setClasses(classData);
       setNganhDaoTao(majorData);
+      setDaiDoi(daiDoiData);
     } catch (error) {
       console.error("Lỗi:", error);
     }
@@ -84,7 +95,8 @@ export default function ClassManagement() {
   const filteredClasses = classes.filter((item) => {
     // Lọc theo ngành
     const matchMajor =
-      selectedMajorId === "all" || String(item.majorId) === String(selectedMajorId);
+      selectedMajorId === "all" ||
+      String(item.majorId) === String(selectedMajorId);
 
     // Lọc theo tên lớp
     const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
@@ -155,11 +167,19 @@ export default function ClassManagement() {
 
     try {
       const studentsRes = await fetch("http://localhost:3001/students");
-      if (!studentsRes.ok) throw new Error("Không thể kiểm tra học viên thuộc lớp");
+      if (!studentsRes.ok)
+        throw new Error("Không thể kiểm tra học viên thuộc lớp");
 
       const students = await studentsRes.json();
-      if (students.some((student: { classId: string }) => String(student.classId) === String(id))) {
-        alert("Không thể xóa lớp đang có học viên. Hãy chuyển hoặc xóa học viên trước.");
+      if (
+        students.some(
+          (student: { classId: string }) =>
+            String(student.classId) === String(id),
+        )
+      ) {
+        alert(
+          "Không thể xóa lớp đang có học viên. Hãy chuyển hoặc xóa học viên trước.",
+        );
         return;
       }
 
@@ -230,12 +250,44 @@ export default function ClassManagement() {
   };
 
   if (tab === "majors") {
-    return <div className="p-4"><div className="mb-4 flex gap-2"><button onClick={() => setTab("majors")} className="rounded-lg bg-blue-600 px-4 py-2 text-white">Chuyên ngành</button><button onClick={() => setTab("classes")} className="rounded-lg border px-4 py-2">Lớp học</button></div><h1 className="mb-4 text-2xl font-bold">Quản lý chuyên ngành</h1><MajorManagement onChanged={fetchData} /></div>;
+    return (
+      <div className="p-4">
+        <div className="mb-4 flex gap-2">
+          <button
+            onClick={() => setTab("majors")}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-white"
+          >
+            Chuyên ngành
+          </button>
+          <button
+            onClick={() => setTab("classes")}
+            className="rounded-lg border px-4 py-2"
+          >
+            Lớp học
+          </button>
+        </div>
+        <h1 className="mb-4 text-2xl font-bold">Quản lý chuyên ngành</h1>
+        <MajorManagement onChanged={fetchData} />
+      </div>
+    );
   }
 
   return (
     <div className="p-2">
-      <div className="mb-4 flex gap-2"><button onClick={() => setTab("majors")} className="rounded-lg border px-4 py-2">Chuyên ngành</button><button onClick={() => setTab("classes")} className="rounded-lg bg-blue-600 px-4 py-2 text-white">Lớp học</button></div>
+      <div className="mb-4 flex gap-2">
+        <button
+          onClick={() => setTab("majors")}
+          className="rounded-lg border px-4 py-2"
+        >
+          Chuyên ngành
+        </button>
+        <button
+          onClick={() => setTab("classes")}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-white"
+        >
+          Lớp học
+        </button>
+      </div>
       {/* =================================
           HEADER
       ================================= */}
@@ -369,7 +421,9 @@ export default function ClassManagement() {
                 Ngành đào tạo
               </th>
               <th className="px-6 py-4 text-left text-xl font-bold">Tên lớp</th>
-
+              <th className="px-6 py-4 text-left text-xl font-bold">
+                Đại đội quản lý
+              </th>
               <th className="px-6 py-4 text-left text-xl font-bold">
                 Thao tác
               </th>
@@ -387,6 +441,9 @@ export default function ClassManagement() {
               currentClasses.map((value, index) => {
                 const major = nganhDaoTao.find(
                   (item) => String(item.id) === String(value.majorId),
+                );
+                const daiDoifind = daiDoi.find(
+                  (item) => String(item.id) === String(value.daiDoiId),
                 );
 
                 return (
@@ -409,6 +466,9 @@ export default function ClassManagement() {
                     </td>
                     <td className="px-6 py-4 font-medium">{value.name}</td>
 
+                    <td className="px-6 py-4">
+                      {daiDoifind?.nameDaiDoi ?? "Không xác định"}
+                    </td>
                     {/* NGÀNH */}
 
                     {/* THAO TÁC */}

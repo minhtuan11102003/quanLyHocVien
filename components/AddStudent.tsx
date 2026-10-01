@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import StudentProfileExtraFields from "@/components/StudentProfileExtraFields";
+import { emptyStudentProfileExtra, type StudentProfileExtra } from "@/app/types/student";
 
 type Major = {
   id: string;
@@ -22,7 +24,7 @@ type QuanKhu = {
   description: string;
 };
 
-type FormData = {
+type FormData = StudentProfileExtra & {
   maSoHV: string;
   name: string;
   majorId: string;
@@ -68,6 +70,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
     donViCap2Id: "",
     tieuDoanId: "",
     daiDoiId: "",
+    ...emptyStudentProfileExtra,
   });
 
   useEffect(() => {
@@ -124,6 +127,10 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
 
   const filteredSubUnits = subUnits.filter((item) => item.parentId === form.quanKhuId);
   const filteredDaiDoi = daiDoi.filter((item) => String(item.idTieuDoan) === String(form.tieuDoanId));
+
+  const handleExtraChange = (name: keyof StudentProfileExtra, value: string) => {
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   // Xử lý input
   const handleChange = (
@@ -368,6 +375,10 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
             ))}
         </select>
       </div>
+      <StudentProfileExtraFields
+        value={form}
+        onChange={handleExtraChange}
+      />
       {/* Button */}
       <div className="flex justify-end gap-3 pt-3">
         <Button type="button" variant="outline" onClick={onClose}>

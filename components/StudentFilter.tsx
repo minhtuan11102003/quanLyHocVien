@@ -28,22 +28,23 @@ export default function StudentFilter({
   onClassChange,
 }: StudentFilterProps) {
   return (
-    <div className="mx-2 mt-4 flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm">
+    <div className="mx-4 mt-5 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:mx-6 sm:grid-cols-[minmax(240px,1fr)_auto_auto]">
       {/* SEARCH */}
 
-      <div className="flex-1">
+      <div className="min-w-0">
+        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">Tìm kiếm</label>
         <input
           type="text"
           value={search}
           onChange={onSearchChange}
           placeholder="Tìm theo tên hoặc mã số học viên..."
-          className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
+          className="field-control"
         />
       </div>
 
       {/* ĐẠI ĐỘI */}
 
-      <select
+      <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Đại đội<select
         value={selectedDonVi}
         onChange={onDonViChange}
         className="rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
@@ -54,11 +55,11 @@ export default function StudentFilter({
         <option value="Đại đội 3">Đại đội 3</option>
         <option value="Đại đội 4">Đại đội 4</option>
         <option value="Đại đội 5">Đại đội 5</option>
-      </select>
+      </select></label>
 
       {/* LỚP */}
 
-      <select
+      <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">Lớp học<select
         value={selectedClassId}
         onChange={onClassChange}
         className="rounded-lg border border-gray-300 px-4 py-3 outline-none focus:border-blue-500"
@@ -70,7 +71,7 @@ export default function StudentFilter({
             {classItem.name}
           </option>
         ))}
-      </select>
+      </select></label>
     </div>
   );
 }

@@ -128,3 +128,22 @@
     @apply font-sans;
   }
 }
+@layer base {
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  input, select, textarea { font-size: 0.875rem; }
+  ::selection { background: #bfdbfe; color: #123a55; }
+}
+
+@layer components {
+  .page-shell { @apply mx-auto w-full max-w-[1600px] p-4 sm:p-6; }
+  .page-card { @apply rounded-2xl border border-slate-200 bg-white shadow-sm; }
+  .page-title { @apply text-2xl font-bold tracking-tight text-slate-900; }
+  .page-subtitle { @apply mt-1 text-sm text-slate-500; }
+  .toolbar { @apply rounded-2xl border border-slate-200 bg-white p-4 shadow-sm; }
+  .table-shell { @apply overflow-auto rounded-2xl border border-slate-200 bg-white shadow-sm; }
+  .table-shell thead { @apply sticky top-0 z-10 bg-slate-50; }
+  .table-shell th { @apply whitespace-nowrap px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500; }
+  .table-shell td { @apply border-t border-slate-100 px-4 py-3 text-sm text-slate-700; }
+  .field-label { @apply mb-1.5 block text-sm font-medium text-slate-700; }
+  .field-control { @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10; }
+}
