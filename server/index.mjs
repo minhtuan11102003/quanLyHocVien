@@ -48,6 +48,7 @@ const collections = new Set([
   "daiDoi",
   "chucVu",
   "graduationTransfers",
+  "graduationRequests",
   "users",
   "permissionCatalog",
 ]);
@@ -64,6 +65,7 @@ const permissionByCollection = {
   daiDoi: "manage_units",
   chucVu: "manage_units",
   graduationTransfers: "manage_graduation",
+  graduationRequests: "manage_graduation",
   permissionCatalog: "manage_permissions",
   users: "manage_permissions",
 };
@@ -132,21 +134,34 @@ function auth(req, db) {
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString());
     if (data.exp < Date.now()) return null;
-    return (
-      db.users?.find((u) => u.id === data.sub && u.active !== false) || null
-    );
+    return effectiveUser(db, db.users?.find((u) => u.id === data.sub && u.active !== false));
   } catch {
     return null;
   }
 }
 function allowed(user, permission) {
-  return user?.role === "admin" || user?.permissions?.includes(permission);
+  return user?.role === "admin" || (permission === "manage_graduation" && user?.role === "company") || user?.permissions?.includes(permission);
+}
+function effectiveUser(db, user) {
+  if (!user) return null;
+  const permissions = rolePermissions(db, user.role);
+  if (user.role === "company" && !permissions.includes("manage_graduation")) permissions.push("manage_graduation");
+  return { ...user, permissions };
 }
 function idOf(x) {
   return String(x?.id ?? "");
 }
 function normalizeId(value) {
   return String(value ?? "").trim();
+}
+function isValidDestination(db, destination) {
+  const regionId = normalizeId(destination?.region);
+  const unitValue = normalizeId(destination?.unit);
+  if (!regionId || !unitValue || !(db.quanKhu || []).some((item) => String(item.id) === regionId)) return false;
+  const [source, unitId] = unitValue.split(":");
+  const sourceUnits = source === "suDoan" ? db.suDoan || [] : source === "luDoan" ? db.luDoan || [] : [...(db.suDoan || []), ...(db.luDoan || [])];
+  const unit = source && unitId ? sourceUnits.find((item) => String(item.id) === unitId) : sourceUnits.find((item) => String(item.id) === unitValue);
+  return Boolean(unit && String(unit.idQuanKhu || "") === regionId);
 }
 function isValidStudentLink(db, input) {
   if (!input || !input.majorId || !input.classId) return false;
@@ -211,6 +226,76 @@ function battalionOwns(db, user, request) {
     String(company?.idTieuDoan || "") === String(user.unitId || "")
   );
 }
+function companiesForUser(db, user) {
+  if (user.role === "company") return [String(user.unitId || "")];
+  if (user.role === "battalion")
+    return (db.daiDoi || [])
+      .filter((item) => String(item.idTieuDoan) === String(user.unitId || ""))
+      .map((item) => String(item.id));
+  return null;
+}
+function isInUnitScope(db, user, resource, item) {
+  if (["admin", "school"].includes(user.role)) return true;
+  const companyIds = companiesForUser(db, user);
+  if (resource === "students" || resource === "classes")
+    return companyIds?.includes(String(item?.daiDoiId || "")) || false;
+  if (resource === "daiDoi") {
+    if (user.role === "battalion")
+      return String(item?.idTieuDoan || "") === String(user.unitId || "");
+    return String(item?.id || "") === String(user.unitId || "");
+  }
+  if (resource === "tieuDoan")
+    return user.role === "battalion" && String(item?.id) === String(user.unitId || "");
+  return true;
+}
+function visibleItems(db, user, resource, list) {
+  if (["students", "classes", "daiDoi", "tieuDoan"].includes(resource))
+    return list.filter((item) => isInUnitScope(db, user, resource, item));
+  if (["rankRequests", "graduationTransfers"].includes(resource))
+    return list.filter((item) => {
+      const student = db.students?.find((student) => String(student.id) === String(item.studentId));
+      return student && isInUnitScope(db, user, "students", student);
+    });
+  if (resource === "positionRequests")
+    return list.filter((item) => {
+      const linked = (item.studentIds || []).map((studentId) => db.students?.find((student) => String(student.id) === String(studentId))).filter(Boolean);
+      return linked.length > 0 && linked.every((student) => isInUnitScope(db, user, "students", student));
+    });
+  if (resource === "graduationRequests")
+    return list.filter((item) => {
+      const linked = (item.items || []).map((entry) => db.students?.find((student) => String(student.id) === String(entry.studentId))).filter(Boolean);
+      return linked.length > 0 && linked.every((student) => isInUnitScope(db, user, "students", student));
+    });
+  return list;
+}
+function publicUser(user) {
+  const safe = { ...user };
+  delete safe.password;
+  return safe;
+}
+function rolePermissions(db, role) {
+  return (db.permissionCatalog || [])
+    .filter((permission) => permission.roles?.includes(role))
+    .map((permission) => permission.id);
+}
+function validateUser(db, input, current) {
+  const candidate = { ...current, ...input };
+  const validRoles = ["admin", "school", "battalion", "company"];
+  const username = String(candidate.username || "").trim();
+  const name = String(candidate.name || "").trim();
+  if (!username || !name || !validRoles.includes(candidate.role))
+    return "Tài khoản cần có tên đăng nhập, họ tên và vai trò hợp lệ";
+  if ((!current && String(candidate.password || "").length < 4) || (current && input.password !== undefined && String(input.password).length < 4))
+    return "Mật khẩu phải có ít nhất 4 ký tự";
+  if ((db.users || []).some((user) => user.id !== current?.id && String(user.username).toLowerCase() === username.toLowerCase()))
+    return "Tên đăng nhập đã tồn tại";
+  const unitId = String(candidate.unitId || "").trim();
+  if (candidate.role === "company" && !(db.daiDoi || []).some((item) => String(item.id) === unitId))
+    return "Cần chọn một Đại đội hợp lệ cho tài khoản chỉ huy Đại đội";
+  if (candidate.role === "battalion" && !(db.tieuDoan || []).some((item) => String(item.id) === unitId))
+    return "Cần chọn một Tiểu đoàn hợp lệ cho tài khoản chỉ huy Tiểu đoàn";
+  return null;
+}
 function fail(res, status, message) {
   return json(res, status, { error: message });
 }
@@ -232,7 +317,7 @@ async function handler(req, res) {
         x.active !== false,
     );
     if (!user) return fail(res, 401, "Sai tài khoản hoặc mật khẩu");
-    const safe = { ...user };
+    const safe = effectiveUser(db, user);
     delete safe.password;
     return json(res, 200, { user: safe, token: tokenFor(user) });
   }
@@ -242,17 +327,35 @@ async function handler(req, res) {
       return fail(res, 401, "Phiên đăng nhập không hợp lệ hoặc đã hết hạn");
     req.user = user;
   }
+  if (url.pathname === "/auth/me" && req.method === "GET")
+    return json(res, 200, { ...publicUser(req.user), password: req.user.password });
+  if (url.pathname === "/auth/change-password" && req.method === "POST") {
+    const input = await body(req);
+    const currentPassword = String(input.currentPassword || "");
+    const newPassword = String(input.newPassword || "");
+    if (req.user.password !== currentPassword)
+      return fail(res, 400, "Mật khẩu hiện tại không đúng");
+    if (newPassword.length < 4)
+      return fail(res, 400, "Mật khẩu mới phải có ít nhất 4 ký tự");
+    const index = db.users.findIndex((account) => account.id === req.user.id);
+    db.users[index] = { ...db.users[index], password: newPassword };
+    writeDb(db);
+    return json(res, 200, { message: "Đã cập nhật mật khẩu" });
+  }
   if (!collections.has(resource))
     return fail(res, 404, "Không tìm thấy tài nguyên");
   const list = Array.isArray(db[resource]) ? db[resource] : [];
   if (req.method === "GET") {
+    if (["users", "permissionCatalog"].includes(resource) && !allowed(req.user, "manage_permissions"))
+      return fail(res, 403, "Không có quyền xem dữ liệu phân quyền");
+    const visible = visibleItems(db, req.user, resource, list);
     if (id) {
-      const item = list.find((x) => idOf(x) === id);
+      const item = visible.find((x) => idOf(x) === id);
       return item
-        ? json(res, 200, item)
+        ? json(res, 200, resource === "users" ? publicUser(item) : item)
         : fail(res, 404, "Không tìm thấy dữ liệu");
     }
-    return json(res, 200, list);
+    return json(res, 200, resource === "users" ? visible.map(publicUser) : visible);
   }
   const user = req.user;
   const permission = permissionByCollection[resource];
@@ -267,10 +370,7 @@ async function handler(req, res) {
       if (!student) return fail(res, 400, "Học viên không tồn tại");
       if (student.graduationStatus === "graduated")
         return fail(res, 400, "Không thể lập hồ sơ nâng cấp cho học viên đã tốt nghiệp");
-      if (
-        user.role === "company" &&
-        String(student.daiDoiId) !== String(user.unitId)
-      )
+      if (!isInUnitScope(db, user, "students", student))
         return fail(res, 403, "Học viên không thuộc Đại đội của bạn");
       const item = {
         ...input,
@@ -360,7 +460,7 @@ async function handler(req, res) {
       if (!["individual", "collective"].includes(input.appointmentType)) return fail(res, 400, "Loại bổ nhiệm không hợp lệ");
       if (input.appointmentType === "individual" && students.length !== 1) return fail(res, 400, "Bổ nhiệm cá nhân chỉ gồm một học viên");
       if (input.appointmentType === "collective" && students.length < 2) return fail(res, 400, "Bổ nhiệm tập thể cần từ hai học viên");
-      if (user.role === "company" && students.some((student) => String(student.daiDoiId) !== String(user.unitId))) return fail(res, 403, "Học viên không thuộc Đại đội của bạn");
+      if (students.some((student) => !isInUnitScope(db, user, "students", student))) return fail(res, 403, "Có học viên không thuộc phạm vi đơn vị bạn quản lý");
       const classIds = [...new Set(students.map((student) => String(student.classId)))];
       const classItem = classIds.length === 1 ? db.classes?.find((item) => String(item.id) === classIds[0]) : null;
       const item = { id: randomUUID(), appointmentType: input.appointmentType, positionId: position.id, positionName: position.name, studentIds, students: students.map((student) => ({ id: student.id, name: student.name, maSoHV: student.maSoHV, classId: student.classId, daiDoiId: student.daiDoiId })), classId: classItem?.id || null, className: classItem?.name || null, totalStudents: students.length, reason: String(input.reason || "").trim(), status: "pending", approvalStage: "battalion", submittedBy: user.id, submittedByRole: user.role, submittedAt: new Date().toISOString() };
@@ -406,8 +506,102 @@ async function handler(req, res) {
     }
     writeDb(db); return json(res, 200, list[index]);
   }
+  if (resource === "graduationRequests") {
+    const linkedStudents = (request) => (request.items || []).map((entry) => db.students?.find((student) => String(student.id) === String(entry.studentId))).filter(Boolean);
+    if (req.method === "POST") {
+      if (!allowed(user, "manage_graduation")) return fail(res, 403, "Không có quyền lập hồ sơ tốt nghiệp");
+      const items = Array.isArray(input.items) ? input.items : [];
+      if (!items.length) return fail(res, 400, "Cần chọn ít nhất một học viên");
+      const ids = new Set();
+      for (const entry of items) {
+        const student = db.students?.find((item) => String(item.id) === String(entry.studentId));
+        if (!student || student.graduationStatus === "graduated" || ids.has(String(entry.studentId)) || !isInUnitScope(db, user, "students", student)) return fail(res, 403, "Có học viên không thuộc phạm vi hoặc không hợp lệ");
+        if (!["return", "transfer"].includes(entry.type) || !isValidDestination(db, entry.target)) return fail(res, 400, "Đơn vị nhận không hợp lệ hoặc không thuộc Quân khu đã chọn");
+        ids.add(String(entry.studentId));
+      }
+      const request = { id: randomUUID(), items: items.map((entry) => ({ studentId: String(entry.studentId), type: entry.type, target: { region: String(entry.target.region), unit: String(entry.target.unit) } })), status: "pending", approvalStage: user.role === "admin" ? "school" : "battalion", submittedBy: user.id, submittedByRole: user.role, submittedAt: new Date().toISOString() };
+      db.graduationRequests ||= []; db.graduationRequests.push(request); writeDb(db); return json(res, 201, request);
+    }
+    if (!id || !["PATCH", "PUT"].includes(req.method)) return fail(res, 405, "Thao tác không hợp lệ");
+    const index = list.findIndex((item) => idOf(item) === id); if (index < 0) return fail(res, 404, "Không tìm thấy hồ sơ");
+    const current = list[index]; const students = linkedStudents(current);
+    if (students.length !== current.items.length || !students.every((student) => isInUnitScope(db, user, "students", student))) return fail(res, 403, "Hồ sơ không thuộc phạm vi đơn vị bạn quản lý");
+    if (user.role === "battalion") {
+      if (current.approvalStage !== "battalion" || !allowed(user, "submit_school") || input.approvalStage !== "school") return fail(res, 403, "Tiểu đoàn chỉ được chuyển hồ sơ thuộc đơn vị mình lên Nhà trường");
+      list[index] = { ...current, approvalStage: "school", status: "pending", forwardedBy: user.id, forwardedAt: new Date().toISOString() };
+    } else if (["school", "admin"].includes(user.role)) {
+      if (current.status !== "pending" || (user.role === "school" && current.approvalStage !== "school") || !["approved", "rejected"].includes(input.status)) return fail(res, 403, "Nhà trường chỉ duyệt hoặc từ chối hồ sơ đang chờ");
+      const next = { ...current, status: input.status, approvalStage: "completed", reviewerNote: String(input.reviewerNote || ""), reviewedBy: user.id, reviewedAt: new Date().toISOString() };
+      if (input.status === "approved") for (const entry of current.items) { const student = db.students.find((item) => String(item.id) === String(entry.studentId)); student.graduationStatus = "graduated"; student.graduatedAt = next.reviewedAt; student.originQuanKhuId ||= student.quanKhuId || ""; student.originDonViCap2Id ||= student.donViCap2Id || ""; student.quanKhuId = entry.target.region; student.donViCap2Id = entry.target.unit; db.graduationTransfers ||= []; db.graduationTransfers.push({ id: randomUUID(), studentId: student.id, studentName: student.name, maSoHV: student.maSoHV, type: entry.type, fromQuanKhuId: student.originQuanKhuId, toQuanKhuId: entry.target.region, fromDonViCap2Id: student.originDonViCap2Id, toDonViCap2Id: entry.target.unit, createdAt: next.reviewedAt }); }
+      list[index] = next;
+    } else if (user.role !== "admin") return fail(res, 403, "Không có quyền xử lý hồ sơ");
+    else list[index] = { ...current, ...input, reviewedBy: user.id, reviewedAt: new Date().toISOString() };
+    writeDb(db); return json(res, 200, list[index]);
+  }
   if (!allowed(user, permission))
     return fail(res, 403, "Không có quyền thực hiện thao tác này");
+  if (["company", "battalion"].includes(user.role) && ["majors", "ranks", "chucVu", "quanKhu", "suDoan", "luDoan", "tieuDoan"].includes(resource))
+    return fail(res, 403, "Chỉ Nhà trường hoặc Admin được thay đổi danh mục toàn hệ thống");
+  if (resource === "permissionCatalog") {
+    const current = id ? list.find((item) => idOf(item) === id) : null;
+    if (id && !current) return fail(res, 404, "Không tìm thấy quyền");
+    const next = { ...current, ...input, id: current?.id || input.id || randomUUID() };
+    if (!String(next.name || "").trim() || !Array.isArray(next.roles) || next.roles.some((role) => !["admin", "school", "battalion", "company"].includes(role)))
+      return fail(res, 400, "Thông tin quyền không hợp lệ");
+    if (!current) list.push(next);
+    else list[list.indexOf(current)] = next;
+    db.permissionCatalog = list;
+    db.users = (db.users || []).map((account) => ({ ...account, permissions: rolePermissions(db, account.role) }));
+    writeDb(db);
+    return json(res, current ? 200 : 201, next);
+  }
+  if (resource === "users") {
+    if (req.method === "DELETE") {
+      const current = list.find((item) => idOf(item) === id);
+      if (!current) return fail(res, 404, "Không tìm thấy tài khoản");
+      if (current.id === user.id) return fail(res, 400, "Không thể xóa tài khoản đang đăng nhập");
+      list.splice(list.indexOf(current), 1);
+      writeDb(db);
+      return json(res, 200, {});
+    }
+    const current = id ? list.find((item) => idOf(item) === id) : null;
+    if (id && !current) return fail(res, 404, "Không tìm thấy tài khoản");
+    const error = validateUser(db, input, current);
+    if (error) return fail(res, 400, error);
+    const next = {
+      ...current,
+      ...input,
+      id: current?.id || input.id || randomUUID(),
+      username: String(input.username ?? current?.username).trim(),
+      name: String(input.name ?? current?.name).trim(),
+      unitId: ["company", "battalion"].includes(input.role ?? current?.role) ? String(input.unitId ?? current?.unitId ?? "").trim() : "",
+      permissions: rolePermissions(db, input.role ?? current?.role),
+    };
+    if (!current) list.push(next);
+    else list[list.indexOf(current)] = next;
+    db.users = list;
+    writeDb(db);
+    return json(res, current ? 200 : 201, publicUser(next));
+  }
+  if (resource === "graduationTransfers") {
+    const current = id ? list.find((item) => idOf(item) === id) : null;
+    const studentId = input.studentId || current?.studentId;
+    const student = db.students?.find((item) => String(item.id) === String(studentId));
+    if (!student || !isInUnitScope(db, user, "students", student))
+      return fail(res, 403, "Học viên không thuộc phạm vi đơn vị bạn quản lý");
+  }
+  if (["students", "classes", "daiDoi", "tieuDoan"].includes(resource)) {
+    const current = id ? list.find((item) => idOf(item) === id) : null;
+    if (current && !isInUnitScope(db, user, resource, current))
+      return fail(res, 403, "Dữ liệu không thuộc phạm vi đơn vị bạn quản lý");
+    if (req.method !== "DELETE") {
+      const candidate = req.method === "PATCH" ? { ...current, ...input } : input;
+      if (!isInUnitScope(db, user, resource, candidate))
+        return fail(res, 403, "Chỉ được thao tác dữ liệu thuộc phạm vi đơn vị bạn quản lý");
+    }
+    if (resource === "tieuDoan" && user.role === "battalion")
+      return fail(res, 403, "Tiểu đoàn không được tự thay đổi thông tin cấp Tiểu đoàn");
+  }
   if (resource === "students" && req.method !== "GET") {
     if (
       input.graduationStatus === "graduated" &&
@@ -504,14 +698,20 @@ async function handler(req, res) {
     const item = list[index];
     if (resource === "majors" && db.classes?.some((x) => String(x.majorId) === id))
       return fail(res, 409, "Không thể xóa chuyên ngành đang có lớp học");
+    if (resource === "students" && (
+      db.rankRequests?.some((x) => String(x.studentId) === id) ||
+      db.positionRequests?.some((x) => (x.studentIds || []).map(String).includes(String(id))) ||
+      db.graduationRequests?.some((x) => (x.items || []).some((entry) => String(entry.studentId) === id)) ||
+      db.graduationTransfers?.some((x) => String(x.studentId) === id)
+    )) return fail(res, 409, "Không thể xóa học viên đang có hồ sơ hoặc lịch sử quyết định liên quan");
     if (resource === "classes" && db.students?.some((x) => String(x.classId) === id))
       return fail(res, 409, "Không thể xóa lớp học đang có học viên");
-    if (resource === "tieuDoan" && db.daiDoi?.some((x) => String(x.idTieuDoan) === id))
-      return fail(res, 409, "Không thể xóa Tiểu đoàn đang có Đại đội trực thuộc");
-    if (resource === "daiDoi" && (db.classes?.some((x) => String(x.daiDoiId) === id) || db.students?.some((x) => String(x.daiDoiId) === id)))
-      return fail(res, 409, "Không thể xóa Đại đội đang có lớp học hoặc học viên");
-    if (resource === "chucVu" && db.students?.some((x) => x.chucVu === item.name))
-      return fail(res, 409, "Không thể xóa chức vụ đang được học viên sử dụng");
+    if (resource === "tieuDoan" && (db.daiDoi?.some((x) => String(x.idTieuDoan) === id) || db.users?.some((x) => x.role === "battalion" && String(x.unitId) === id)))
+      return fail(res, 409, "Không thể xóa Tiểu đoàn đang có Đại đội hoặc tài khoản trực thuộc");
+    if (resource === "daiDoi" && (db.classes?.some((x) => String(x.daiDoiId) === id) || db.students?.some((x) => String(x.daiDoiId) === id) || db.users?.some((x) => x.role === "company" && String(x.unitId) === id)))
+      return fail(res, 409, "Không thể xóa Đại đội đang có lớp, học viên hoặc tài khoản trực thuộc");
+    if (resource === "chucVu" && (db.students?.some((x) => x.chucVu === item.name) || db.positionRequests?.some((x) => x.positionId === item.id)))
+      return fail(res, 409, "Không thể xóa chức vụ đang được học viên hoặc hồ sơ bổ nhiệm sử dụng");
     if (resource === "ranks" && (db.students?.some((x) => x.capBac === item.name) || db.rankRequests?.some((x) => x.currentRank === item.name || x.proposedRank === item.name)))
       return fail(res, 409, "Không thể xóa cấp bậc đang được sử dụng");
     list.splice(index, 1);

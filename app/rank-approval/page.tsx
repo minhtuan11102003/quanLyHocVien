@@ -77,6 +77,9 @@ export default function RankApprovalPage() {
     setSession(getSession());
     load().catch(console.error);
   }, []);
+  useEffect(() => {
+    if (session?.role === "company") setCompanyId(String(session.unitId || ""));
+  }, [session]);
 
   const stageOf = (request: RankRequest) => request.approvalStage || (request.status === "approved" ? "completed" : "battalion");
   const hasPermission = (permission: string) => session?.role === "admin" || Boolean(session?.permissions?.includes(permission));
@@ -381,7 +384,7 @@ export default function RankApprovalPage() {
           <form onSubmit={createRequest} className="space-y-4 p-5">
             <h2 className="text-xl font-bold">Lập hồ sơ nâng cấp</h2>
             <div className="grid gap-3 md:grid-cols-3">
-              <select value={companyId} onChange={(e) => { setCompanyId(e.target.value); setMajorId(""); setClassId(""); setCandidateIds([]); }} className="field-control"><option value="">-- Chọn Đại đội --</option>{companies.filter((company) => session?.role !== "company" || company.id === session.unitId).map((company) => <option key={company.id} value={company.id}>{company.nameDaiDoi || company.id}</option>)}</select>
+              <select value={companyId} disabled={session?.role === "company"} onChange={(e) => { setCompanyId(e.target.value); setMajorId(""); setClassId(""); setCandidateIds([]); }} className="field-control disabled:bg-slate-100"><option value="">-- Chọn Đại đội --</option>{companies.filter((company) => session?.role !== "company" || company.id === session.unitId).map((company) => <option key={company.id} value={company.id}>{company.nameDaiDoi || company.id}</option>)}</select>
               <select value={majorId} disabled={!companyId} onChange={(e) => { setMajorId(e.target.value); setClassId(""); setCandidateIds([]); }} className="field-control"><option value="">-- Chọn chuyên ngành --</option>{availableMajors.map((major) => <option key={major.id} value={major.id}>{major.name}{major.shortName ? ` (${major.shortName})` : ""}</option>)}</select>
               <select value={classId} disabled={!majorId} onChange={(e) => { setClassId(e.target.value); setCandidateIds([]); }} className="field-control"><option value="">Tất cả lớp học</option>{availableClasses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
             </div>

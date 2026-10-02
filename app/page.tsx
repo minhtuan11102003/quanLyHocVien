@@ -10,6 +10,7 @@ import StudentPagination from "@/components/StudentPagination";
 import StudentModals from "@/components/StudentModals";
 import StudentDetail from "@/components/StudentDetail";
 import { ModalShell } from "@/components/ui/modal-shell";
+import { getSession } from "@/components/AuthGate";
 
 import type {
   Student,
@@ -104,15 +105,21 @@ export default function Home() {
       const suDoanData = await suDoanRes.json();
       const luDoanData = await luDoanRes.json();
       const daiDoiData = daiDoiRes.ok ? await daiDoiRes.json() : [];
-      setCompanies(Array.isArray(daiDoiData) ? daiDoiData : []);
+      const session = getSession();
+      const allCompanies = Array.isArray(daiDoiData) ? daiDoiData : [];
+      const allowedCompanyIds = session?.role === "company" ? [String(session.unitId || "")] : session?.role === "battalion" ? allCompanies.filter((company: { id: string; idTieuDoan?: string }) => String(company.idTieuDoan) === String(session.unitId || "")).map((company: { id: string }) => String(company.id)) : null;
+      const inScope = (companyId?: string) => !allowedCompanyIds || allowedCompanyIds.includes(String(companyId || ""));
+      const scopedStudents = Array.isArray(studentData) ? studentData.filter((student: Student) => inScope(student.daiDoiId)) : [];
+      const scopedClasses = Array.isArray(classData) ? classData.filter((item: ClassItem) => inScope(item.daiDoiId)) : [];
+      setCompanies(allCompanies.filter((company: { id: string }) => inScope(company.id)));
       setQuankhu(quanKhuData);
       setSubUnits([...(suDoanData as NamedUnit[]).map((x) => ({ id: x.id, name: x.nameSuDoan || "Chưa đặt tên", type: "Sư đoàn", source: "suDoan" })), ...(luDoanData as NamedUnit[]).map((x) => ({ id: x.id, name: x.nameLuDoan || "Chưa đặt tên", type: "Lữ đoàn", source: "luDoan" }))]);
 
-      setStudents(studentData);
+      setStudents(scopedStudents);
 
       setNganhDaoTao(nganhData);
 
-      setClasses(classData);
+      setClasses(scopedClasses);
     } catch (error) {
       console.error("Lỗi:", error);
     }
