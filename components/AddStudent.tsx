@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import StudentProfileExtraFields from "@/components/StudentProfileExtraFields";
 import StudentPersonalFields from "@/components/StudentPersonalFields";
+import { getSession } from "@/components/AuthGate";
 import {
   emptyStudentProfileExtra,
   type StudentProfileExtra,
@@ -54,6 +55,8 @@ type AddStudentProps = {
 };
 
 export default function AddStudentComponent({ onClose }: AddStudentProps) {
+  const session = getSession();
+  const companyLocked = session?.role === "company";
   const [majors, setMajors] = useState<Major[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [ranks, setRanks] = useState<Rank[]>([]);
@@ -147,6 +150,10 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
         }
         setTieuDoan(Array.isArray(tdData) ? tdData : []);
         setDaiDoi(Array.isArray(ddData) ? ddData : []);
+        if (companyLocked) {
+          const ownCompany = (Array.isArray(ddData) ? ddData : []).find((item: Company) => String(item.id) === String(session?.unitId));
+          if (ownCompany) setForm((current) => ({ ...current, tieuDoanId: String(ownCompany.idTieuDoan), daiDoiId: String(ownCompany.id) }));
+        }
         setChucVuList(
           Array.isArray(cvData) && cvData.length
             ? cvData
@@ -182,7 +189,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
     };
 
     fetchData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- tải danh sách khi mở biểu mẫu
 
   // Lọc lớp theo ngành
   const filteredClasses = classes.filter(
@@ -439,6 +446,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
           onChange={(e) =>
             setForm((p) => ({ ...p, tieuDoanId: e.target.value, daiDoiId: "" }))
           }
+          disabled={companyLocked}
           className="field-control"
         >
           <option value="">-- Chọn Tiểu đoàn --</option>
@@ -454,7 +462,7 @@ export default function AddStudentComponent({ onClose }: AddStudentProps) {
         <select
           value={form.daiDoiId}
           onChange={(e) => setForm((p) => ({ ...p, daiDoiId: e.target.value, majorId: "", classId: "" }))}
-          disabled={!form.tieuDoanId}
+          disabled={!form.tieuDoanId || companyLocked}
           className="field-control disabled:bg-slate-100 disabled:text-slate-400"
         >
           <option value="">

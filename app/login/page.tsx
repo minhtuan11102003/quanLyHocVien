@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -30,7 +31,7 @@ export default function LoginPage() {
 
     localStorage.setItem(
       "student_session",
-      JSON.stringify({ ...data.user, token: data.token }),
+      JSON.stringify({ ...data.user, currentPassword: password, token: data.token }),
     );
     router.replace("/");
   };
@@ -108,14 +109,24 @@ export default function LoginPage() {
                   <label className="block text-sm font-medium text-slate-700">
                     Mật khẩu
                   </label>
-                  <input
-                    required
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Mật khẩu"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-700 outline-none transition focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
-                  />
+                  <div className="relative">
+                    <input
+                      required
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mật khẩu"
+                      className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 pr-24 text-slate-700 outline-none transition focus:border-blue-500 focus:ring-3 focus:ring-blue-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((current) => !current)}
+                      className="absolute inset-y-0 right-2 my-1 rounded-lg px-3 text-xs font-semibold text-blue-700 hover:bg-blue-50"
+                      aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                    >
+                      {showPassword ? "Ẩn" : "Hiện"}
+                    </button>
+                  </div>
                 </div>
 
                 {error && (

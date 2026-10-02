@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getSession } from "@/components/AuthGate";
 
 type AddClassProps = {
   onClose: () => void | Promise<void>;
@@ -13,6 +14,8 @@ type Major = {
 };
 
 export default function AddClassComponent({ onClose }: AddClassProps) {
+  const session = getSession();
+  const companyLocked = session?.role === "company";
   const [name, setName] = useState("");
   const [majorId, setMajorId] = useState("");
   const [daiDoiId, setDaiDoiId] = useState("");
@@ -34,14 +37,18 @@ export default function AddClassComponent({ onClose }: AddClassProps) {
 
         setMajors(data);
         const unitRes = await fetch("http://localhost:3001/daiDoi");
-        if (unitRes.ok) setDaiDoi(await unitRes.json());
+        if (unitRes.ok) {
+          const companies = await unitRes.json();
+          setDaiDoi(companies);
+          if (companyLocked) setDaiDoiId(String(session?.unitId || ""));
+        }
       } catch (error) {
         console.error("Lỗi:", error);
       }
     };
 
     fetchMajors();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- tải danh sách khi mở biểu mẫu
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +125,7 @@ export default function AddClassComponent({ onClose }: AddClassProps) {
         </select>
       </div>
 
-      <div><label className="mb-2 block font-medium">Đại đội quản lý</label><select value={daiDoiId} onChange={(e)=>setDaiDoiId(e.target.value)} className="w-full rounded-lg border px-4 py-3"><option value="">-- Chọn đại đội --</option>{daiDoi.map(x=><option key={x.id} value={x.id}>{x.nameDaiDoi}</option>)}</select></div>
+      <div><label className="mb-2 block font-medium">Đại đội quản lý</label><select value={daiDoiId} disabled={companyLocked} onChange={(e)=>setDaiDoiId(e.target.value)} className="w-full rounded-lg border px-4 py-3 disabled:bg-slate-100"><option value="">-- Chọn đại đội --</option>{daiDoi.map(x=><option key={x.id} value={x.id}>{x.nameDaiDoi}</option>)}</select>{companyLocked && <p className="mt-1 text-xs text-slate-500">Tự động gán theo tài khoản Đại đội.</p>}</div>
 
       {/* =========================
           TÊN LỚP
