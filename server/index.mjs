@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
 import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
 import { URL } from "node:url";
+import ExcelJS from "exceljs";
 
 const PORT = Number(process.env.API_PORT || 3001);
 const LEGACY_DB_FILE = new URL("../db.json", import.meta.url);
@@ -296,6 +297,29 @@ function validateUser(db, input, current) {
     return "Cần chọn một Tiểu đoàn hợp lệ cho tài khoản chỉ huy Tiểu đoàn";
   return null;
 }
+function validateStudentImportRows(db, rows) {
+  const required = ["maSoHV", "name", "majorId", "classId", "quanKhuId", "donViCap2Id", "tieuDoanId", "daiDoiId", "chucVu", "danToc", "birthDay", "capBac"];
+  const knownCodes = new Set((db.students || []).map((student) => String(student.maSoHV || "").trim().toLocaleLowerCase()));
+  const importedCodes = new Set();
+  const errors = [];
+  const validRows = [];
+  let sampleRows = 0;
+  for (const [index, raw] of rows.entries()) {
+    // Dòng ví dụ có sẵn trong file mẫu luôn được bỏ qua, kể cả khi người dùng không xóa nó.
+    if (String(raw?.maSoHV || "").trim() === "HV2026-001") { sampleRows++; continue; }
+    const row = Object.fromEntries(Object.entries(raw || {}).map(([key, value]) => [key.trim(), typeof value === "string" ? value.trim() : String(value ?? "").trim()]));
+    for (const key of ["majorId", "classId", "quanKhuId", "donViCap2Id", "tieuDoanId", "daiDoiId"]) row[key] = String(row[key] || "").split(" | ")[0].trim();
+    const missing = required.filter((key) => !row[key]);
+    const code = String(row.maSoHV || "").toLocaleLowerCase();
+    let message = "";
+    if (missing.length) message = `Thiếu cột bắt buộc: ${missing.join(", ")}`;
+    else if (knownCodes.has(code) || importedCodes.has(code)) message = `Mã học viên ${row.maSoHV} đã tồn tại hoặc bị trùng trong tệp`;
+    else if (!isValidStudentLink(db, row)) message = "Liên kết ngành, lớp, đơn vị, tiểu đoàn hoặc đại đội không hợp lệ";
+    if (message) errors.push({ row: index + 2, maSoHV: row.maSoHV || "", message });
+    else { importedCodes.add(code); validRows.push(row); }
+  }
+  return { errors, validRows, sampleRows };
+}
 function fail(res, status, message) {
   return json(res, status, { error: message });
 }
@@ -341,6 +365,49 @@ async function handler(req, res) {
     db.users[index] = { ...db.users[index], password: newPassword };
     writeDb(db);
     return json(res, 200, { message: "Đã cập nhật mật khẩu" });
+  }
+  if (url.pathname === "/imports/students/template-fast" && req.method === "GET") {
+    if (req.user.role !== "admin") return fail(res, 403, "Chỉ Admin được tải mẫu nhập dữ liệu");
+    const columns = "maSoHV,name,birthDay,gioiTinh,danToc,tonGiao,sucKhoe,vanHoa,quanKhuId,donViCap2Id,tieuDoanId,daiDoiId,majorId,classId,chucVu,capBac,doiTuongDaoTao,trinhDoDaoTao,nganhDaoTao,namTotNghiep,xepLoai,nangKhieu,ngayNhapNgu,soHieuQuanNhan,soTheBHYT,ngayVaoDoan,ngayVaoDang,ngayChinhThuc,soCCCD,ngayCapCCCD,noiCapCCCD,hoTenCha,ngheNghiepCha,noiLamViecCha,sdtCha,hoTenMe,ngheNghiepMe,noiLamViecMe,sdtMe,hoTenVoChong,ngheNghiepVoChong,noiLamViecVoChong,sdtVoChong,queQuan,nguyenQuan,truQuan,diaChi,soDienThoai,nguoiBaoTin,diaChiBaoTin,sdtBaoTin,ngayTang,lyDoTang,ngayGiam,lyDoGiam".split(",");
+    const book = new ExcelJS.Workbook(); const sheet = book.addWorksheet("HOC_VIEN", { views: [{ state: "frozen", ySplit: 3 }] }); const refs = book.addWorksheet("DANH_MUC"); const company = db.daiDoi?.[0]; const classItem = db.classes?.find((item) => String(item.daiDoiId) === String(company?.id)) || db.classes?.[0]; const major = db.majors?.find((item) => String(item.id) === String(classItem?.majorId)) || db.majors?.[0]; const unit = [...(db.suDoan || []).map((item) => ({ ...item, source: "suDoan", name: item.nameSuDoan })), ...(db.luDoan || []).map((item) => ({ ...item, source: "luDoan", name: item.nameLuDoan }))][0]; const region = db.quanKhu?.find((item) => String(item.id) === String(unit?.idQuanKhu)) || db.quanKhu?.[0]; const battalion = db.tieuDoan?.find((item) => String(item.id) === String(company?.idTieuDoan));
+    const lists = { quanKhuId: (db.quanKhu || []).map((item) => `${item.id} | ${item.nameQuanKhu}`), donViCap2Id: [...(db.suDoan || []).map((item) => `suDoan:${item.id} | ${item.nameSuDoan}`), ...(db.luDoan || []).map((item) => `luDoan:${item.id} | ${item.nameLuDoan}`)], tieuDoanId: (db.tieuDoan || []).map((item) => `${item.id} | ${item.nameTieuDoan}`), daiDoiId: (db.daiDoi || []).map((item) => `${item.id} | ${item.nameDaiDoi}`), majorId: (db.majors || []).map((item) => `${item.id} | ${item.name}`), classId: (db.classes || []).map((item) => `${item.id} | ${item.name}`), chucVu: (db.chucVu || []).map((item) => item.name), capBac: (db.ranks || []).map((item) => item.name) }; const letter = (index) => String.fromCharCode(64 + index); let col = 1; const formulas = {}; for (const [key, values] of Object.entries(lists)) { refs.getCell(1, col).value = key; values.forEach((value, index) => { refs.getCell(index + 2, col).value = value; }); formulas[key] = `'DANH_MUC'!$${letter(col)}$2:$${letter(col)}$${Math.max(2, values.length + 1)}`; col++; } refs.state = "hidden";
+    sheet.mergeCells(1, 1, 1, columns.length); sheet.getCell("A1").value = "MẪU NHẬP DỮ LIỆU HỌC VIÊN"; sheet.getCell("A1").font = { bold: true, size: 16, color: { argb: "FFFFFFFF" } }; sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A8A" } }; sheet.getCell("A1").alignment = { horizontal: "center" }; sheet.mergeCells(2, 1, 2, columns.length); sheet.getCell("A2").value = "Dòng ví dụ HV2026-001 được tự bỏ qua. Dropdown được tạo cho 200 dòng để file mở nhanh; có thể sao chép định dạng xuống các dòng tiếp theo."; sheet.getCell("A2").alignment = { wrapText: true }; sheet.addRow(columns); sheet.addRow(columns.map((key) => ({ maSoHV: "HV2026-001", name: "Nguyễn Minh Anh", birthDay: "2004-08-15", gioiTinh: "Nam", danToc: "Kinh", quanKhuId: region ? `${region.id} | ${region.nameQuanKhu}` : "", donViCap2Id: unit ? `${unit.source}:${unit.id} | ${unit.name}` : "", tieuDoanId: battalion ? `${battalion.id} | ${battalion.nameTieuDoan}` : "", daiDoiId: company ? `${company.id} | ${company.nameDaiDoi}` : "", majorId: major ? `${major.id} | ${major.name}` : "", classId: classItem ? `${classItem.id} | ${classItem.name}` : "", chucVu: (db.chucVu || []).find((item) => item.name === "Học viên")?.name || "Học viên", capBac: db.ranks?.[0]?.name || "Binh nhì" })[key] || "")); sheet.getRow(3).eachCell((cell) => { cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0F766E" } }; }); sheet.getRow(4).eachCell((cell) => { cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF7D6" } }; }); columns.forEach((key, index) => { sheet.getColumn(index + 1).width = Math.max(16, Math.min(28, key.length + 8)); const formula = formulas[key] || ({ gioiTinh: '"Nam,Nữ"', tonGiao: '"Không,Phật giáo,Công giáo,Tin Lành"', sucKhoe: '"Loại 1,Loại 2,Loại 3,Loại 4,Loại 5"', vanHoa: '"12/12,Trung cấp,Cao đẳng,Đại học"' })[key]; if (formula) for (let row = 4; row <= 203; row++) sheet.getCell(row, index + 1).dataValidation = { type: "list", allowBlank: true, formulae: [formula] }; }); const buffer = await book.xlsx.writeBuffer(); res.writeHead(200, { "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "content-disposition": "attachment; filename*=UTF-8''mau-nhap-hoc-vien.xlsx", "access-control-allow-origin": "http://localhost:3000" }); return res.end(Buffer.from(buffer));
+  }
+  if (url.pathname === "/imports/students/template" && req.method === "GET") {
+    if (req.user.role !== "admin") return fail(res, 403, "Chỉ Admin được tải mẫu nhập dữ liệu");
+    const columns = "maSoHV,name,birthDay,gioiTinh,danToc,tonGiao,sucKhoe,vanHoa,quanKhuId,donViCap2Id,tieuDoanId,daiDoiId,majorId,classId,chucVu,capBac,doiTuongDaoTao,trinhDoDaoTao,nganhDaoTao,namTotNghiep,xepLoai,nangKhieu,ngayNhapNgu,soHieuQuanNhan,soTheBHYT,ngayVaoDoan,ngayVaoDang,ngayChinhThuc,soCCCD,ngayCapCCCD,noiCapCCCD,hoTenCha,ngheNghiepCha,noiLamViecCha,sdtCha,hoTenMe,ngheNghiepMe,noiLamViecMe,sdtMe,hoTenVoChong,ngheNghiepVoChong,noiLamViecVoChong,sdtVoChong,queQuan,nguyenQuan,truQuan,diaChi,soDienThoai,nguoiBaoTin,diaChiBaoTin,sdtBaoTin,ngayTang,lyDoTang,ngayGiam,lyDoGiam".split(",");
+    const workbook = new ExcelJS.Workbook(); const sheet = workbook.addWorksheet("HOC_VIEN", { views: [{ state: "frozen", ySplit: 3 }] }); const refs = workbook.addWorksheet("DANH_MUC");
+    const company = db.daiDoi?.[0]; const classItem = db.classes?.find((item) => String(item.daiDoiId) === String(company?.id)) || db.classes?.[0]; const major = db.majors?.find((item) => String(item.id) === String(classItem?.majorId)) || db.majors?.[0]; const unit = [...(db.suDoan || []).map((item) => ({ ...item, source: "suDoan", label: item.nameSuDoan })), ...(db.luDoan || []).map((item) => ({ ...item, source: "luDoan", label: item.nameLuDoan }))][0]; const region = db.quanKhu?.find((item) => String(item.id) === String(unit?.idQuanKhu)) || db.quanKhu?.[0]; const battalion = db.tieuDoan?.find((item) => String(item.id) === String(company?.idTieuDoan));
+    const lists = { quanKhuId: (db.quanKhu || []).map((item) => `${item.id} | ${item.nameQuanKhu}`), donViCap2Id: [...(db.suDoan || []).map((item) => `suDoan:${item.id} | ${item.nameSuDoan}`), ...(db.luDoan || []).map((item) => `luDoan:${item.id} | ${item.nameLuDoan}`)], tieuDoanId: (db.tieuDoan || []).map((item) => `${item.id} | ${item.nameTieuDoan}`), daiDoiId: (db.daiDoi || []).map((item) => `${item.id} | ${item.nameDaiDoi}`), majorId: (db.majors || []).map((item) => `${item.id} | ${item.name}`), classId: (db.classes || []).map((item) => `${item.id} | ${item.name}`), chucVu: (db.chucVu || []).map((item) => item.name), capBac: (db.ranks || []).map((item) => item.name) };
+    let refCol = 1; const formulas = {}; for (const [key, values] of Object.entries(lists)) { refs.getCell(1, refCol).value = key; values.forEach((value, index) => { refs.getCell(index + 2, refCol).value = value; }); formulas[key] = `'DANH_MUC'!$${ExcelJS.utils?.getExcelAlpha?.(refCol) || String.fromCharCode(64 + refCol)}$2:$${ExcelJS.utils?.getExcelAlpha?.(refCol) || String.fromCharCode(64 + refCol)}$${Math.max(values.length + 1, 2)}`; refCol++; }
+    refs.state = "hidden"; sheet.mergeCells(1, 1, 1, columns.length); sheet.getCell("A1").value = "MẪU NHẬP DỮ LIỆU HỌC VIÊN"; sheet.getCell("A1").font = { bold: true, size: 16, color: { argb: "FFFFFFFF" } }; sheet.getCell("A1").fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A8A" } }; sheet.getCell("A1").alignment = { horizontal: "center" }; sheet.mergeCells(2, 1, 2, columns.length); sheet.getCell("A2").value = "Các ô có danh sách chọn sẵn. Hãy chọn đúng mã | tên; hệ thống tự lấy phần mã khi nhập. Cột bắt buộc: maSoHV, name, birthDay, danToc và toàn bộ mã liên kết."; sheet.getCell("A2").alignment = { wrapText: true }; sheet.addRow(columns); const example = { maSoHV: "HV2026-001", name: "Nguyễn Minh Anh", birthDay: "2004-08-15", gioiTinh: "Nam", danToc: "Kinh", tonGiao: "Không", sucKhoe: "Loại 1", vanHoa: "12/12", quanKhuId: region ? `${region.id} | ${region.nameQuanKhu}` : "", donViCap2Id: unit ? `${unit.source}:${unit.id} | ${unit.label}` : "", tieuDoanId: battalion ? `${battalion.id} | ${battalion.nameTieuDoan}` : "", daiDoiId: company ? `${company.id} | ${company.nameDaiDoi}` : "", majorId: major ? `${major.id} | ${major.name}` : "", classId: classItem ? `${classItem.id} | ${classItem.name}` : "", chucVu: (db.chucVu || []).find((item) => item.name === "Học viên")?.name || "Học viên", capBac: db.ranks?.[0]?.name || "Binh nhì", ngayNhapNgu: "2023-02-10", soHieuQuanNhan: "QN-2023-00125", soCCCD: "001204012345", queQuan: "Nam Định", diaChi: "Nam Từ Liêm, Hà Nội", soDienThoai: "0987654321" }; sheet.addRow(columns.map((key) => example[key] || "")); sheet.getRow(3).eachCell((cell) => { cell.font = { bold: true, color: { argb: "FFFFFFFF" } }; cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0F766E" } }; cell.alignment = { wrapText: true, horizontal: "center" }; }); sheet.getRow(4).eachCell((cell) => { cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFC" } }; }); columns.forEach((key, index) => { const column = sheet.getColumn(index + 1); column.width = Math.max(16, Math.min(28, key.length + 8)); const formula = formulas[key] || ({ gioiTinh: '"Nam,Nữ"', tonGiao: '"Không,Phật giáo,Công giáo,Tin Lành"', sucKhoe: '"Loại 1,Loại 2,Loại 3,Loại 4,Loại 5"', vanHoa: '"12/12,Trung cấp,Cao đẳng,Đại học"' })[key]; if (formula) for (let row = 4; row <= 5003; row++) sheet.getCell(row, index + 1).dataValidation = { type: "list", allowBlank: true, formulae: [formula] }; }); const buffer = await workbook.xlsx.writeBuffer(); res.writeHead(200, { "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "content-disposition": "attachment; filename*=UTF-8''mau-nhap-hoc-vien.xlsx", "access-control-allow-origin": "http://localhost:3000" }); return res.end(Buffer.from(buffer));
+  }
+  if (url.pathname === "/imports/students/preview" && req.method === "POST") {
+    if (req.user.role !== "admin") return fail(res, 403, "Chỉ Admin được nhập dữ liệu học viên");
+    const input = await body(req);
+    const rows = Array.isArray(input.rows) ? input.rows : [];
+    if (!rows.length) return fail(res, 400, "Tệp không có dòng dữ liệu học viên");
+    if (rows.length > 5000) return fail(res, 400, "Mỗi lần chỉ được nhập tối đa 5.000 học viên");
+    const result = validateStudentImportRows(db, rows);
+    return json(res, 200, { total: rows.length - result.sampleRows, valid: result.validRows.length, errors: result.errors, sampleRows: result.sampleRows });
+  }
+  if (url.pathname === "/imports/students/commit" && req.method === "POST") {
+    if (req.user.role !== "admin") return fail(res, 403, "Chỉ Admin được nhập dữ liệu học viên");
+    const input = await body(req);
+    const rows = Array.isArray(input.rows) ? input.rows : [];
+    if (!rows.length) return fail(res, 400, "Tệp không có dòng dữ liệu học viên");
+    if (rows.length > 5000) return fail(res, 400, "Mỗi lần chỉ được nhập tối đa 5.000 học viên");
+    const result = validateStudentImportRows(db, rows);
+    if (result.errors.length) return json(res, 400, { error: "Tệp còn lỗi; hãy sửa trước khi xác nhận nhập", total: rows.length - result.sampleRows, valid: result.validRows.length, errors: result.errors, sampleRows: result.sampleRows });
+    db.students ||= [];
+    const createdAt = new Date().toISOString();
+    const imported = result.validRows.map((row) => {
+      const company = db.daiDoi.find((item) => String(item.id) === String(row.daiDoiId));
+      return { ...row, id: randomUUID(), donVi: company?.nameDaiDoi || "", donViCu: row.donViCu || row.donViCap2Id, originQuanKhuId: row.originQuanKhuId || row.quanKhuId, originDonViCap2Id: row.originDonViCap2Id || row.donViCap2Id, importedAt: createdAt, importedBy: req.user.id };
+    });
+    db.students.push(...imported);
+    writeDb(db);
+    return json(res, 201, { imported: imported.length });
   }
   if (!collections.has(resource))
     return fail(res, 404, "Không tìm thấy tài nguyên");
