@@ -1,12 +1,24 @@
 "use client";
 
-import * as XLSX from "xlsx";
 import { FileSpreadsheet, UploadCloud } from "lucide-react";
 import { DragEvent, useRef, useState } from "react";
 import { getSession } from "@/components/AuthGate";
 
 const API = "http://localhost:3001";
 type Preview = { total: number; valid: number; sampleRows?: number; errors: { row: number; maSoHV: string; message: string }[] };
+const parseExcelInWorker = async (file: File): Promise<Record<string, string>[]> => {
+  const worker = new Worker(new URL("./excel-worker.ts", import.meta.url));
+  const buffer = await file.arrayBuffer();
+  return new Promise((resolve, reject) => {
+    worker.onmessage = (event: MessageEvent<{ rows?: Record<string, string>[]; error?: string }>) => {
+      worker.terminate();
+      if (event.data.error) reject(new Error(event.data.error));
+      else resolve(event.data.rows || []);
+    };
+    worker.onerror = () => { worker.terminate(); reject(new Error("Không thể đọc tệp Excel")); };
+    worker.postMessage({ buffer }, [buffer]);
+  });
+};
 
 export default function DataImportPage() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -37,13 +49,7 @@ export default function DataImportPage() {
     if (inputRef.current) inputRef.current.value = "";
     setBusy(true); setMessage(""); setPreview(null); setRows([]); setFileName("");
     try {
-      const book = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: false });
-      const sheet = book.Sheets[book.SheetNames.includes("HOC_VIEN") ? "HOC_VIEN" : book.SheetNames[0]];
-      const grid = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "", raw: false });
-      const header = grid.findIndex((line) => String(line[0] || "").startsWith("maSoHV"));
-      if (header < 0) throw new Error("Không tìm thấy hàng tiêu đề maSoHV. Hãy dùng file mẫu của hệ thống.");
-      const keys = grid[header].map((value) => String(value || "").split("\n")[0].trim());
-      const data = grid.slice(header + 1).map((line) => Object.fromEntries(keys.map((key, index) => [key, String(line[index] || "").trim()]))).filter((row) => Object.values(row).some(Boolean));
+      const data = await parseExcelInWorker(file);
       const response = await fetch(`${API}/imports/students/preview`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: data }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Không thể kiểm tra tệp");
