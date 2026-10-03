@@ -33,7 +33,9 @@ export default function DataImportPage() {
   const select = async (file?: File) => {
     if (!file) return;
     if (!/\.(xlsx|xls|csv)$/i.test(file.name)) return setMessage("Chỉ hỗ trợ file Excel (.xlsx, .xls) hoặc CSV.");
-    setBusy(true); setMessage(""); setPreview(null);
+    // Reset input ngay khi nhận file để người dùng có thể chọn lại chính file này sau khi sửa lỗi trùng.
+    if (inputRef.current) inputRef.current.value = "";
+    setBusy(true); setMessage(""); setPreview(null); setRows([]); setFileName("");
     try {
       const book = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: false });
       const sheet = book.Sheets[book.SheetNames.includes("HOC_VIEN") ? "HOC_VIEN" : book.SheetNames[0]];
