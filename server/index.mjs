@@ -303,7 +303,10 @@ function validateStudentImportRows(db, rows) {
   const importedCodes = new Set();
   const errors = [];
   const validRows = [];
+  let sampleRows = 0;
   for (const [index, raw] of rows.entries()) {
+    // Dòng ví dụ có sẵn trong file mẫu luôn được bỏ qua, kể cả khi người dùng không xóa nó.
+    if (String(raw?.maSoHV || "").trim() === "HV2026-001") { sampleRows++; continue; }
     const row = Object.fromEntries(Object.entries(raw || {}).map(([key, value]) => [key.trim(), typeof value === "string" ? value.trim() : String(value ?? "").trim()]));
     for (const key of ["majorId", "classId", "quanKhuId", "donViCap2Id", "tieuDoanId", "daiDoiId"]) row[key] = String(row[key] || "").split(" | ")[0].trim();
     const missing = required.filter((key) => !row[key]);
@@ -315,7 +318,7 @@ function validateStudentImportRows(db, rows) {
     if (message) errors.push({ row: index + 2, maSoHV: row.maSoHV || "", message });
     else { importedCodes.add(code); validRows.push(row); }
   }
-  return { errors, validRows };
+  return { errors, validRows, sampleRows };
 }
 function fail(res, status, message) {
   return json(res, status, { error: message });
@@ -379,7 +382,7 @@ async function handler(req, res) {
     if (!rows.length) return fail(res, 400, "Tệp không có dòng dữ liệu học viên");
     if (rows.length > 5000) return fail(res, 400, "Mỗi lần chỉ được nhập tối đa 5.000 học viên");
     const result = validateStudentImportRows(db, rows);
-    return json(res, 200, { total: rows.length, valid: result.validRows.length, errors: result.errors });
+    return json(res, 200, { total: rows.length - result.sampleRows, valid: result.validRows.length, errors: result.errors, sampleRows: result.sampleRows });
   }
   if (url.pathname === "/imports/students/commit" && req.method === "POST") {
     if (req.user.role !== "admin") return fail(res, 403, "Chỉ Admin được nhập dữ liệu học viên");
@@ -388,7 +391,7 @@ async function handler(req, res) {
     if (!rows.length) return fail(res, 400, "Tệp không có dòng dữ liệu học viên");
     if (rows.length > 5000) return fail(res, 400, "Mỗi lần chỉ được nhập tối đa 5.000 học viên");
     const result = validateStudentImportRows(db, rows);
-    if (result.errors.length) return json(res, 400, { error: "Tệp còn lỗi; hãy sửa trước khi xác nhận nhập", total: rows.length, valid: result.validRows.length, errors: result.errors });
+    if (result.errors.length) return json(res, 400, { error: "Tệp còn lỗi; hãy sửa trước khi xác nhận nhập", total: rows.length - result.sampleRows, valid: result.validRows.length, errors: result.errors, sampleRows: result.sampleRows });
     db.students ||= [];
     const createdAt = new Date().toISOString();
     const imported = result.validRows.map((row) => {
