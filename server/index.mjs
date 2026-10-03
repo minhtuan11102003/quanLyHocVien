@@ -296,6 +296,25 @@ function validateUser(db, input, current) {
     return "Cần chọn một Tiểu đoàn hợp lệ cho tài khoản chỉ huy Tiểu đoàn";
   return null;
 }
+function validateStudentImportRows(db, rows) {
+  const required = ["maSoHV", "name", "majorId", "classId", "quanKhuId", "donViCap2Id", "tieuDoanId", "daiDoiId", "chucVu", "danToc", "birthDay", "capBac"];
+  const knownCodes = new Set((db.students || []).map((student) => String(student.maSoHV || "").trim().toLocaleLowerCase()));
+  const importedCodes = new Set();
+  const errors = [];
+  const validRows = [];
+  for (const [index, raw] of rows.entries()) {
+    const row = Object.fromEntries(Object.entries(raw || {}).map(([key, value]) => [key.trim(), typeof value === "string" ? value.trim() : String(value ?? "").trim()]));
+    const missing = required.filter((key) => !row[key]);
+    const code = String(row.maSoHV || "").toLocaleLowerCase();
+    let message = "";
+    if (missing.length) message = `Thiếu cột bắt buộc: ${missing.join(", ")}`;
+    else if (knownCodes.has(code) || importedCodes.has(code)) message = `Mã học viên ${row.maSoHV} đã tồn tại hoặc bị trùng trong tệp`;
+    else if (!isValidStudentLink(db, row)) message = "Liên kết ngành, lớp, đơn vị, tiểu đoàn hoặc đại đội không hợp lệ";
+    if (message) errors.push({ row: index + 2, maSoHV: row.maSoHV || "", message });
+    else { importedCodes.add(code); validRows.push(row); }
+  }
+  return { errors, validRows };
+}
 function fail(res, status, message) {
   return json(res, status, { error: message });
 }
@@ -341,6 +360,30 @@ async function handler(req, res) {
     db.users[index] = { ...db.users[index], password: newPassword };
     writeDb(db);
     return json(res, 200, { message: "Đã cập nhật mật khẩu" });
+  }
+  if (url.pathname === "/imports/students/preview" && req.method === "POST") {
+    if (req.user.role !== "admin") return fail(res, 403, "Chỉ Admin được nhập dữ liệu học viên");
+    const input = await body(req);
+    const rows = Array.isArray(input.rows) ? input.rows : [];
+    if (!rows.length) return fail(res, 400, "Tệp không có dòng dữ liệu học viên");
+    if (rows.length > 5000) return fail(res, 400, "Mỗi lần chỉ được nhập tối đa 5.000 học viên");
+    const result = validateStudentImportRows(db, rows);
+    return json(res, 200, { total: rows.length, valid: result.validRows.length, errors: result.errors });
+  }
+  if (url.pathname === "/imports/students/commit" && req.method === "POST") {
+    if (req.user.role !== "admin") return fail(res, 403, "Chỉ Admin được nhập dữ liệu học viên");
+    const input = await body(req);
+    const rows = Array.isArray(input.rows) ? input.rows : [];
+    if (!rows.length) return fail(res, 400, "Tệp không có dòng dữ liệu học viên");
+    if (rows.length > 5000) return fail(res, 400, "Mỗi lần chỉ được nhập tối đa 5.000 học viên");
+    const result = validateStudentImportRows(db, rows);
+    if (result.errors.length) return json(res, 400, { error: "Tệp còn lỗi; hãy sửa trước khi xác nhận nhập", total: rows.length, valid: result.validRows.length, errors: result.errors });
+    db.students ||= [];
+    const createdAt = new Date().toISOString();
+    const imported = result.validRows.map((row) => ({ ...row, id: randomUUID(), importedAt: createdAt, importedBy: req.user.id }));
+    db.students.push(...imported);
+    writeDb(db);
+    return json(res, 201, { imported: imported.length });
   }
   if (!collections.has(resource))
     return fail(res, 404, "Không tìm thấy tài nguyên");

@@ -16,6 +16,7 @@ import {
   Medal,
   Network,
   ShieldCheck,
+  Upload,
   UserCircle,
   UserCog,
   Users,
@@ -55,6 +56,7 @@ const managementMenu: MenuItem[] = [
   { href: "/military-units", label: "Quân khu & đơn vị", icon: Building2 },
   { href: "/positions", label: "Chức vụ", icon: UserCog },
   { href: "/ranks", label: "Cấp bậc", icon: Medal },
+  { href: "/data-import", label: "Nhập dữ liệu Excel", icon: Upload },
   { href: "/profile", label: "Tài khoản của tôi", icon: UserCircle },
 ];
 
@@ -87,6 +89,7 @@ export default function CategoriesComponent() {
     if (item.href === "/classes") return hasPermission("manage_classes");
     if (item.href === "/student-batch-actions")
       return hasPermission("manage_students");
+    if (item.href === "/data-import") return session?.role === "admin";
     if (item.href === "/units")
       return hasPermission("manage_units") && session?.role !== "company";
     if (
