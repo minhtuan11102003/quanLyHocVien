@@ -21,7 +21,7 @@ export default function DataImportPage() {
   const download = async () => {
     setBusy(true); setMessage("");
     try {
-      const response = await fetch(`${API}/imports/students/template`);
+      const response = await fetch(`${API}/imports/students/template-fast`);
       if (!response.ok) throw new Error();
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
