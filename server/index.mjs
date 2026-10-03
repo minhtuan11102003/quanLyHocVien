@@ -380,7 +380,10 @@ async function handler(req, res) {
     if (result.errors.length) return json(res, 400, { error: "Tệp còn lỗi; hãy sửa trước khi xác nhận nhập", total: rows.length, valid: result.validRows.length, errors: result.errors });
     db.students ||= [];
     const createdAt = new Date().toISOString();
-    const imported = result.validRows.map((row) => ({ ...row, id: randomUUID(), importedAt: createdAt, importedBy: req.user.id }));
+    const imported = result.validRows.map((row) => {
+      const company = db.daiDoi.find((item) => String(item.id) === String(row.daiDoiId));
+      return { ...row, id: randomUUID(), donVi: company?.nameDaiDoi || "", donViCu: row.donViCu || row.donViCap2Id, originQuanKhuId: row.originQuanKhuId || row.quanKhuId, originDonViCap2Id: row.originDonViCap2Id || row.donViCap2Id, importedAt: createdAt, importedBy: req.user.id };
+    });
     db.students.push(...imported);
     writeDb(db);
     return json(res, 201, { imported: imported.length });
