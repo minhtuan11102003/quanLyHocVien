@@ -500,6 +500,8 @@ async function handler(req, res) {
       merged.forwardedByRole = user.role;
       merged.forwardedAt = new Date().toISOString();
     }
+    if (["revision_requested", "rejected"].includes(nextStatus) && ["school", "admin"].includes(user.role))
+      merged.approvalStage = "battalion";
     if (nextStatus === "approved") {
       if (!studentFor(db, current))
         return fail(res, 400, "Hồ sơ mất liên kết học viên");

@@ -182,7 +182,7 @@ export default function RankApprovalPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         status: "pending",
-        approvalStage: selected.approvalStage || "battalion",
+        approvalStage: "battalion",
         reason: reasonText,
         reviewerNote: "",
         submittedAt: new Date().toISOString(),
@@ -210,7 +210,7 @@ export default function RankApprovalPage() {
       setSelected(null); await load(); return;
     }
     if (!canReviewStage(selected)) return alert("Chỉ Nhà trường hoặc Admin mới được phê duyệt hồ sơ.");
-    const nextStage = nextStatus === "approved" ? ((session?.role === "admin" || stageOf(selected) === "school") ? "completed" : "school") : stageOf(selected);
+    const nextStage = nextStatus === "approved" ? ((session?.role === "admin" || stageOf(selected) === "school") ? "completed" : "school") : ["revision_requested", "rejected"].includes(nextStatus) ? "battalion" : stageOf(selected);
     const res = await fetch(
       `http://localhost:3001/rankRequests/${selected.id}`,
       {
