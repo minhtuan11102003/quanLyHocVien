@@ -89,7 +89,8 @@ export default function CategoriesComponent() {
     if (item.href === "/classes") return hasPermission("manage_classes");
     if (item.href === "/student-batch-actions")
       return hasPermission("manage_students");
-    if (item.href === "/data-import") return session?.role === "admin";
+    if (item.href === "/data-import")
+      return ["admin", "battalion", "company"].includes(session?.role || "");
     if (item.href === "/units")
       return hasPermission("manage_units") && session?.role !== "company";
     if (

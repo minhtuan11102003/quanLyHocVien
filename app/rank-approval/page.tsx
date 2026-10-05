@@ -8,9 +8,25 @@ import RankApprovalDetail from "@/components/RankApprovalDetail";
 import { getSession, type SessionUser } from "@/components/AuthGate";
 import { DataPagination, usePagination } from "@/components/DataPagination";
 
-type Student = { id: string; name: string; maSoHV: string; capBac: string; majorId: string; classId: string; daiDoiId?: string; graduationStatus?: string };
+type Student = {
+  id: string;
+  name: string;
+  maSoHV: string;
+  capBac: string;
+  majorId: string;
+  classId: string;
+  daiDoiId?: string;
+  graduationStatus?: string;
+  ngayNhapNgu?: string;
+  chucVu?: string;
+};
 type CompanyUnit = { id: string; nameDaiDoi?: string; idTieuDoan?: string };
-type ClassItem = { id: string; name: string; majorId: string; daiDoiId?: string };
+type ClassItem = {
+  id: string;
+  name: string;
+  majorId: string;
+  daiDoiId?: string;
+};
 type Major = { id: string; name: string; shortName?: string };
 type Rank = { id: string; name: string; rankOrder: number };
 type RankRequest = {
@@ -41,6 +57,8 @@ export default function RankApprovalPage() {
   const [majors, setMajors] = useState<Major[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
+  const [filterMajorId, setFilterMajorId] = useState("all");
+  const [filterClassId, setFilterClassId] = useState("all");
   const [selected, setSelected] = useState<RankRequest | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [companyId, setCompanyId] = useState("");
@@ -53,16 +71,22 @@ export default function RankApprovalPage() {
   const [reason, setReason] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [session, setSession] = useState<SessionUser | null>(null);
+  const [showExportChoice, setShowExportChoice] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [documentNumber, setDocumentNumber] = useState("");
+  const [signedDate, setSignedDate] = useState("");
+  const [signerName, setSignerName] = useState("");
 
   const load = async () => {
-    const [r, s, ranksRes, companiesRes, classesRes, majorsRes] = await Promise.all([
-      fetch("http://localhost:3001/rankRequests"),
-      fetch("http://localhost:3001/students"),
-      fetch("http://localhost:3001/ranks"),
-      fetch("http://localhost:3001/daiDoi"),
-      fetch("http://localhost:3001/classes"),
-      fetch("http://localhost:3001/majors"),
-    ]);
+    const [r, s, ranksRes, companiesRes, classesRes, majorsRes] =
+      await Promise.all([
+        fetch("http://localhost:3001/rankRequests"),
+        fetch("http://localhost:3001/students"),
+        fetch("http://localhost:3001/ranks"),
+        fetch("http://localhost:3001/daiDoi"),
+        fetch("http://localhost:3001/classes"),
+        fetch("http://localhost:3001/majors"),
+      ]);
     if (r.ok) setRequests(await r.json());
     if (s.ok) setStudents(await s.json());
     if (ranksRes.ok) setRanks(await ranksRes.json());
@@ -81,20 +105,53 @@ export default function RankApprovalPage() {
     if (session?.role === "company") setCompanyId(String(session.unitId || ""));
   }, [session]);
 
-  const stageOf = (request: RankRequest) => request.approvalStage || (request.status === "approved" ? "completed" : "battalion");
-  const hasPermission = (permission: string) => session?.role === "admin" || Boolean(session?.permissions?.includes(permission));
-  const studentForRequest = (request: RankRequest) => students.find((student) => String(student.id) === String(request.studentId));
+  // Hồ sơ cũ có thể còn approvalStage = "school" sau khi đã được duyệt.
+  // Status approved là phê duyệt cuối, cần ưu tiên hơn dữ liệu giai đoạn cũ.
+  const stageOf = (request: RankRequest) =>
+    request.status === "approved"
+      ? "completed"
+      : request.approvalStage || "battalion";
+  const hasPermission = (permission: string) =>
+    session?.role === "admin" ||
+    Boolean(session?.permissions?.includes(permission));
+  const studentForRequest = (request: RankRequest) =>
+    students.find(
+      (student) => String(student.id) === String(request.studentId),
+    );
   const belongsToBattalion = (request: RankRequest) => {
     if (session?.role !== "battalion") return false;
     const student = studentForRequest(request);
     if (!student?.daiDoiId) return false;
-    const company = companies.find((unit) => String(unit.id) === String(student.daiDoiId));
+    const company = companies.find(
+      (unit) => String(unit.id) === String(student.daiDoiId),
+    );
     return String(company?.idTieuDoan ?? "") === String(session.unitId ?? "");
   };
-  const canReviewStage = (request: RankRequest) => session?.role === "admin" || (session?.role === "school" && stageOf(request) === "school" && hasPermission("approve_school"));
-  const canForwardStage = (request: RankRequest) => session?.role === "battalion" && stageOf(request) === "battalion" && belongsToBattalion(request) && hasPermission("submit_school");
-  const canCreateRequest = session?.role === "admin" || (session?.role === "company" && hasPermission("create_rank_request"));
-  const stageLabel = (request: RankRequest) => request.status === "approved" ? "Nhà trường đã duyệt" : request.status === "revision_requested" ? "Yêu cầu chỉnh sửa" : request.status === "rejected" ? "Đã từ chối" : stageOf(request) === "battalion" ? "Chờ Tiểu đoàn" : stageOf(request) === "school" ? "Tiểu đoàn đã chuyển · chờ Nhà trường" : "Đã hoàn tất";
+  const canReviewStage = (request: RankRequest) =>
+    session?.role === "admin" ||
+    (session?.role === "school" &&
+      stageOf(request) === "school" &&
+      hasPermission("approve_school"));
+  const canForwardStage = (request: RankRequest) =>
+    session?.role === "battalion" &&
+    stageOf(request) === "battalion" &&
+    belongsToBattalion(request) &&
+    hasPermission("submit_school");
+  const canCreateRequest =
+    session?.role === "admin" ||
+    (session?.role === "company" && hasPermission("create_rank_request"));
+  const stageLabel = (request: RankRequest) =>
+    request.status === "approved"
+      ? "Nhà trường đã duyệt"
+      : request.status === "revision_requested"
+        ? "Yêu cầu chỉnh sửa"
+        : request.status === "rejected"
+          ? "Đã từ chối"
+          : stageOf(request) === "battalion"
+            ? "Chờ Tiểu đoàn"
+            : stageOf(request) === "school"
+              ? "Tiểu đoàn đã chuyển · chờ Nhà trường"
+              : "Đã hoàn tất";
 
   const counts = useMemo(
     () => ({
@@ -109,15 +166,59 @@ export default function RankApprovalPage() {
   );
   const visible = requests.filter((r) => {
     const stage = stageOf(r);
-    const stageVisible = session?.role === "admin" || (session?.role === "battalion" && belongsToBattalion(r)) || (session?.role === "school" && (stage === "school" || stage === "completed")) || (session?.role === "company" && r.submittedBy === session.id);
-    return r.status === status && stageVisible && (category === "all" || r.category === category) && (!search || `${r.studentName} ${r.maSoHV}`.toLocaleLowerCase().includes(search.toLocaleLowerCase()));
+    const student = studentForRequest(r);
+    const stageVisible =
+      session?.role === "admin" ||
+      (session?.role === "battalion" && belongsToBattalion(r)) ||
+      (session?.role === "school" &&
+        (stage === "school" || stage === "completed")) ||
+      (session?.role === "company" && r.submittedBy === session.id);
+    return (
+      r.status === status &&
+      stageVisible &&
+      (category === "all" || r.category === category) &&
+      (filterMajorId === "all" || String(student?.majorId) === filterMajorId) &&
+      (filterClassId === "all" || String(student?.classId) === filterClassId) &&
+      (!search ||
+        `${r.studentName} ${r.maSoHV}`
+          .toLocaleLowerCase()
+          .includes(search.toLocaleLowerCase()))
+    );
   });
+  const filterClasses = classes.filter(
+    (item) => filterMajorId === "all" || String(item.majorId) === filterMajorId,
+  );
   const pagination = usePagination(visible);
-  const eligibleStudents = students.filter((student) => student.graduationStatus !== "graduated" && (session?.role !== "company" || student.daiDoiId === session.unitId));
-  const availableMajors = majors.filter((major) => classes.some((item) => String(item.majorId) === String(major.id) && (!companyId || String(item.daiDoiId) === String(companyId))));
-  const availableClasses = classes.filter((item) => (!companyId || String(item.daiDoiId) === String(companyId)) && (!majorId || String(item.majorId) === String(majorId)));
-  const filteredStudents = eligibleStudents.filter((student) => (!companyId || String(student.daiDoiId) === String(companyId)) && (!majorId || String(student.majorId) === String(majorId)) && (!classId || String(student.classId) === String(classId)) && (!studentSearch.trim() || `${student.name} ${student.maSoHV}`.toLocaleLowerCase().includes(studentSearch.trim().toLocaleLowerCase())));
-  const selectedCandidates = filteredStudents.filter((student) => candidateIds.includes(student.id));
+  const eligibleStudents = students.filter(
+    (student) =>
+      student.graduationStatus !== "graduated" &&
+      (session?.role !== "company" || student.daiDoiId === session.unitId),
+  );
+  const availableMajors = majors.filter((major) =>
+    classes.some(
+      (item) =>
+        String(item.majorId) === String(major.id) &&
+        (!companyId || String(item.daiDoiId) === String(companyId)),
+    ),
+  );
+  const availableClasses = classes.filter(
+    (item) =>
+      (!companyId || String(item.daiDoiId) === String(companyId)) &&
+      (!majorId || String(item.majorId) === String(majorId)),
+  );
+  const filteredStudents = eligibleStudents.filter(
+    (student) =>
+      (!companyId || String(student.daiDoiId) === String(companyId)) &&
+      (!majorId || String(student.majorId) === String(majorId)) &&
+      (!classId || String(student.classId) === String(classId)) &&
+      (!studentSearch.trim() ||
+        `${student.name} ${student.maSoHV}`
+          .toLocaleLowerCase()
+          .includes(studentSearch.trim().toLocaleLowerCase())),
+  );
+  const selectedCandidates = filteredStudents.filter((student) =>
+    candidateIds.includes(student.id),
+  );
 
   const toggleSelected = (id: string) =>
     setSelectedIds((prev) =>
@@ -126,49 +227,181 @@ export default function RankApprovalPage() {
   const visibleSelected = visible.filter((item) =>
     selectedIds.includes(item.id),
   );
+  const allVisibleSelected =
+    visible.length > 0 &&
+    visible.every((item) => selectedIds.includes(item.id));
   const approveBulk = async () => {
     if (!visibleSelected.length) return alert("Hãy chọn hồ sơ cần xử lý.");
-    if (!visibleSelected.every((item) => canReviewStage(item) || canForwardStage(item))) return alert("Tài khoản không có quyền xử lý một hoặc nhiều hồ sơ.");
-    if (visibleSelected.some((item) => canReviewStage(item) && stageOf(item) === "school" && !studentForRequest(item))) return alert("Có hồ sơ không còn học viên liên kết, không thể phê duyệt.");
-    if (!window.confirm(`${session?.role === "battalion" ? "Gửi" : "Phê duyệt"} ${visibleSelected.length} hồ sơ đã chọn?`)) return;
-    await Promise.all(visibleSelected.map(async (item) => {
-      const forwarding = canForwardStage(item);
-      const finalApproval = session?.role === "admin" || canReviewStage(item) && stageOf(item) === "school";
-      await fetch(`http://localhost:3001/rankRequests/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: finalApproval ? "approved" : "pending", approvalStage: finalApproval ? "completed" : "school", reviewedAt: new Date().toISOString(), reviewedBy: session?.id, reviewedByRole: session?.role, forwardedAt: forwarding ? new Date().toISOString() : undefined }) });
-      if (finalApproval) await fetch(`http://localhost:3001/students/${item.studentId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ capBac: item.proposedRank }) });
-    }));
-    setSelectedIds([]); await load();
+    if (
+      !visibleSelected.every(
+        (item) => canReviewStage(item) || canForwardStage(item),
+      )
+    )
+      return alert("Tài khoản không có quyền xử lý một hoặc nhiều hồ sơ.");
+    if (
+      visibleSelected.some(
+        (item) =>
+          canReviewStage(item) &&
+          stageOf(item) === "school" &&
+          !studentForRequest(item),
+      )
+    )
+      return alert(
+        "Có hồ sơ không còn học viên liên kết, không thể phê duyệt.",
+      );
+    if (
+      !window.confirm(
+        `${session?.role === "battalion" ? "Gửi" : "Phê duyệt"} ${visibleSelected.length} hồ sơ đã chọn?`,
+      )
+    )
+      return;
+    await Promise.all(
+      visibleSelected.map(async (item) => {
+        const forwarding = canForwardStage(item);
+        const finalApproval =
+          session?.role === "admin" ||
+          (canReviewStage(item) && stageOf(item) === "school");
+        await fetch(`http://localhost:3001/rankRequests/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: finalApproval ? "approved" : "pending",
+            approvalStage: finalApproval ? "completed" : "school",
+            reviewedAt: new Date().toISOString(),
+            reviewedBy: session?.id,
+            reviewedByRole: session?.role,
+            forwardedAt: forwarding ? new Date().toISOString() : undefined,
+          }),
+        });
+        if (finalApproval)
+          await fetch(`http://localhost:3001/students/${item.studentId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ capBac: item.proposedRank }),
+          });
+      }),
+    );
+    setSelectedIds([]);
+    await load();
   };
-  const exportBulk = async () => {
+  const exportBulk = async (mode: "collective" | "individual") => {
     if (!visibleSelected.length)
       return alert("Hãy chọn hồ sơ đã duyệt để xuất.");
-    const response = await fetch("/api/export-rank-decisions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ requests: visibleSelected }),
+    if (!documentNumber.trim() || !signedDate.trim() || !signerName.trim())
+      return alert("Vui lòng nhập số văn bản, ngày ký và người ký trước khi xuất Word.");
+    if (
+      visibleSelected.some(
+        (item) => item.status !== "approved",
+      )
+    )
+      return alert(
+        "Chỉ được xuất các hồ sơ đã được Nhà trường phê duyệt cuối cùng.",
+      );
+    const requestsForExport = visibleSelected.map((item) => {
+      const student = studentForRequest(item);
+      const classItem = classes.find(
+        (value) => String(value.id) === String(student?.classId),
+      );
+      const major = majors.find(
+        (value) => String(value.id) === String(student?.majorId),
+      );
+      const company = companies.find(
+        (value) => String(value.id) === String(student?.daiDoiId),
+      );
+      return {
+        ...item,
+        className: classItem?.name || "Chưa cập nhật lớp",
+        majorName: major?.name || "Chưa cập nhật chuyên ngành",
+        companyName: company?.nameDaiDoi || "Chưa cập nhật đại đội",
+        enlistedAt: student?.ngayNhapNgu || "",
+        positionName: student?.chucVu || "Học viên",
+      };
     });
-    if (!response.ok) return alert("Không thể xuất quyết định.");
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(await response.blob());
-    link.download = "quyet-dinh-thang-cap-tap-the.zip";
-    link.click();
+    setExporting(true);
+    try {
+      const response = await fetch("/api/export-rank-decisions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode,
+          requests: requestsForExport,
+          documentNumber: documentNumber.trim(),
+          signedDate: signedDate.trim(),
+          signerName: signerName.trim(),
+        }),
+      });
+      if (!response.ok) return alert("Không thể xuất quyết định.");
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(await response.blob());
+      link.download =
+        mode === "collective"
+          ? "quyet-dinh-thang-cap-tap-the.docx"
+          : "quyet-dinh-thang-cap-ca-nhan.zip";
+      link.click();
+      URL.revokeObjectURL(link.href);
+      setShowExportChoice(false);
+    } catch {
+      alert("Không thể kết nối để xuất quyết định.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const createRequest = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!canCreateRequest) return alert("Chỉ Đại đội hoặc Admin được lập yêu cầu nâng quân hàm.");
-    if (!selectedCandidates.length || !reason.trim()) return alert("Chọn ít nhất một học viên và nhập căn cứ nâng cấp.");
-    const invalid = selectedCandidates.filter((student) => !ranks.some((rank) => rank.rankOrder > (ranks.find((rank) => rank.name === student.capBac)?.rankOrder ?? Number.MAX_SAFE_INTEGER)));
-    if (invalid.length) return alert(`Không tìm thấy cấp bậc kế tiếp cho: ${invalid.map((student) => student.name).join(", ")}.`);
-    const responses = await Promise.all(selectedCandidates.map((student) => {
-      const currentRank = ranks.find((rank) => rank.name === student.capBac)!;
-      const nextRank = ranks.filter((rank) => rank.rankOrder > currentRank.rankOrder).sort((a, b) => a.rankOrder - b.rankOrder)[0];
-      const payload: RankRequest = { id: crypto.randomUUID(), studentId: student.id, studentName: student.name, maSoHV: student.maSoHV, category: requestCategory, currentRank: student.capBac, proposedRank: nextRank.name, reason: reason.trim(), submittedAt: new Date().toISOString(), status: "pending", approvalStage: "battalion", submittedBy: session?.id, submittedByRole: session?.role };
-      return fetch("http://localhost:3001/rankRequests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    }));
-    if (responses.some((response) => !response.ok)) return alert("Có hồ sơ không thể tạo. Vui lòng kiểm tra lại dữ liệu.");
+    if (!canCreateRequest)
+      return alert("Chỉ Đại đội hoặc Admin được lập yêu cầu nâng quân hàm.");
+    if (!selectedCandidates.length || !reason.trim())
+      return alert("Chọn ít nhất một học viên và nhập căn cứ nâng cấp.");
+    const invalid = selectedCandidates.filter(
+      (student) =>
+        !ranks.some(
+          (rank) =>
+            rank.rankOrder >
+            (ranks.find((rank) => rank.name === student.capBac)?.rankOrder ??
+              Number.MAX_SAFE_INTEGER),
+        ),
+    );
+    if (invalid.length)
+      return alert(
+        `Không tìm thấy cấp bậc kế tiếp cho: ${invalid.map((student) => student.name).join(", ")}.`,
+      );
+    const responses = await Promise.all(
+      selectedCandidates.map((student) => {
+        const currentRank = ranks.find((rank) => rank.name === student.capBac)!;
+        const nextRank = ranks
+          .filter((rank) => rank.rankOrder > currentRank.rankOrder)
+          .sort((a, b) => a.rankOrder - b.rankOrder)[0];
+        const payload: RankRequest = {
+          id: crypto.randomUUID(),
+          studentId: student.id,
+          studentName: student.name,
+          maSoHV: student.maSoHV,
+          category: requestCategory,
+          currentRank: student.capBac,
+          proposedRank: nextRank.name,
+          reason: reason.trim(),
+          submittedAt: new Date().toISOString(),
+          status: "pending",
+          approvalStage: "battalion",
+          submittedBy: session?.id,
+          submittedByRole: session?.role,
+        };
+        return fetch("http://localhost:3001/rankRequests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }),
+    );
+    if (responses.some((response) => !response.ok))
+      return alert("Có hồ sơ không thể tạo. Vui lòng kiểm tra lại dữ liệu.");
     setShowCreate(false);
-    setCandidateIds([]); setCompanyId(""); setMajorId(""); setClassId(""); setStudentSearch("");
+    setCandidateIds([]);
+    setCompanyId("");
+    setMajorId("");
+    setClassId("");
+    setStudentSearch("");
     setReason("");
     await load();
     setStatus("pending");
@@ -176,41 +409,76 @@ export default function RankApprovalPage() {
 
   const resubmit = async (reasonText: string) => {
     if (!selected) return;
-    if (session?.role !== "admin" && !(session?.role === "company" && selected.submittedBy === session.id)) return alert("Bạn không có quyền gửi lại hồ sơ này.");
-    const res = await fetch(`http://localhost:3001/rankRequests/${selected.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: "pending",
-        approvalStage: "battalion",
-        reason: reasonText,
-        reviewerNote: "",
-        submittedAt: new Date().toISOString(),
-        reviewedAt: null,
-      }),
-    });
+    if (
+      session?.role !== "admin" &&
+      !(session?.role === "company" && selected.submittedBy === session.id)
+    )
+      return alert("Bạn không có quyền gửi lại hồ sơ này.");
+    const res = await fetch(
+      `http://localhost:3001/rankRequests/${selected.id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "pending",
+          approvalStage: "battalion",
+          reason: reasonText,
+          reviewerNote: "",
+          submittedAt: new Date().toISOString(),
+          reviewedAt: null,
+        }),
+      },
+    );
     if (!res.ok) return alert("Không thể gửi lại hồ sơ chờ duyệt");
     setSelected(null);
     setStatus("pending");
     await load();
   };
 
-  const action = async (nextStatus: ApprovalStatus | "forward", note: string) => {
+  const action = async (
+    nextStatus: ApprovalStatus | "forward",
+    note: string,
+  ) => {
     if (
       (nextStatus === "revision_requested" || nextStatus === "rejected") &&
       !note.trim()
     )
       return alert("Vui lòng nhập ghi chú xử lý.");
     if (!selected) return;
-    if (nextStatus === "approved" && !studentForRequest(selected)) return alert("Hồ sơ không còn học viên liên kết, không thể phê duyệt.");
+    if (nextStatus === "approved" && !studentForRequest(selected))
+      return alert("Hồ sơ không còn học viên liên kết, không thể phê duyệt.");
     if (nextStatus === "forward") {
-      if (!canForwardStage(selected)) return alert("Tiểu đoàn chỉ được chuyển hồ sơ thuộc Tiểu đoàn mình.");
-      const forwarded = await fetch(`http://localhost:3001/rankRequests/${selected.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "pending", approvalStage: "school", forwardedAt: new Date().toISOString(), forwardedBy: session?.id, forwardedByRole: session?.role }) });
+      if (!canForwardStage(selected))
+        return alert("Tiểu đoàn chỉ được chuyển hồ sơ thuộc Tiểu đoàn mình.");
+      const forwarded = await fetch(
+        `http://localhost:3001/rankRequests/${selected.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: "pending",
+            approvalStage: "school",
+            forwardedAt: new Date().toISOString(),
+            forwardedBy: session?.id,
+            forwardedByRole: session?.role,
+          }),
+        },
+      );
       if (!forwarded.ok) return alert("Không thể gửi hồ sơ lên Nhà trường");
-      setSelected(null); await load(); return;
+      setSelected(null);
+      await load();
+      return;
     }
-    if (!canReviewStage(selected)) return alert("Chỉ Nhà trường hoặc Admin mới được phê duyệt hồ sơ.");
-    const nextStage = nextStatus === "approved" ? ((session?.role === "admin" || stageOf(selected) === "school") ? "completed" : "school") : ["revision_requested", "rejected"].includes(nextStatus) ? "battalion" : stageOf(selected);
+    if (!canReviewStage(selected))
+      return alert("Chỉ Nhà trường hoặc Admin mới được phê duyệt hồ sơ.");
+    const nextStage =
+      nextStatus === "approved"
+        ? session?.role === "admin" || stageOf(selected) === "school"
+          ? "completed"
+          : "school"
+        : ["revision_requested", "rejected"].includes(nextStatus)
+          ? "battalion"
+          : stageOf(selected);
     const res = await fetch(
       `http://localhost:3001/rankRequests/${selected.id}`,
       {
@@ -241,19 +509,34 @@ export default function RankApprovalPage() {
     <div className="page-shell">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="mb-1 text-xs font-bold uppercase tracking-[.18em] text-blue-600">Quy trình xét duyệt</p><h1 className="text-2xl font-bold tracking-tight text-slate-900">Phê duyệt nâng cấp bậc</h1>
+          <p className="mb-1 text-xs font-bold uppercase tracking-[.18em] text-blue-600">
+            Quy trình xét duyệt
+          </p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Phê duyệt nâng cấp bậc
+          </h1>
           <p className="mt-1 text-sm text-slate-500">
             Quy trình xét duyệt HSQ, binh sĩ và học viên
           </p>
         </div>
-        {canCreateRequest && <button
-          onClick={() => setShowCreate(true)}
-          className="rounded-xl bg-blue-600 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-blue-700"
-        >
-          + Lập hồ sơ
-        </button>}
+        {canCreateRequest && (
+          <button
+            onClick={() => setShowCreate(true)}
+            className="rounded-xl bg-blue-600 px-4 py-2.5 font-semibold text-white shadow-sm transition hover:bg-blue-700"
+          >
+            + Lập hồ sơ
+          </button>
+        )}
       </div>
-      <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">{session?.role === "company" ? "Đại đội: theo dõi hồ sơ của mình đang chờ Tiểu đoàn, đã chuyển Nhà trường hay đã duyệt." : session?.role === "battalion" ? "Tiểu đoàn: xem toàn bộ hồ sơ thuộc đơn vị; chỉ chuyển các hồ sơ đang chờ cấp mình lên Nhà trường." : session?.role === "school" ? "Nhà trường: xem hồ sơ đã được chuyển lên và kết quả phê duyệt cuối." : "Admin: có thể xem và xử lý toàn bộ luồng."}</div>
+      <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
+        {session?.role === "company"
+          ? "Đại đội: theo dõi hồ sơ của mình đang chờ Tiểu đoàn, đã chuyển Nhà trường hay đã duyệt."
+          : session?.role === "battalion"
+            ? "Tiểu đoàn: xem toàn bộ hồ sơ thuộc đơn vị; chỉ chuyển các hồ sơ đang chờ cấp mình lên Nhà trường."
+            : session?.role === "school"
+              ? "Nhà trường: xem hồ sơ đã được chuyển lên và kết quả phê duyệt cuối."
+              : "Admin: có thể xem và xử lý toàn bộ luồng."}
+      </div>
       <RankApprovalTabs active={status} counts={counts} onChange={setStatus} />
       <div className="my-4 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <input
@@ -272,26 +555,64 @@ export default function RankApprovalPage() {
             <option key={c}>{c}</option>
           ))}
         </select>
-        <button
-          onClick={() => setSelectedIds(visible.map((item) => item.id))}
-          className="field-control w-auto min-w-[180px]"
+        <select
+          value={filterMajorId}
+          onChange={(event) => {
+            setFilterMajorId(event.target.value);
+            setFilterClassId("all");
+          }}
+          className="field-control w-auto min-w-[190px]"
         >
-          Chọn tất cả
+          <option value="all">Tất cả chuyên ngành</option>
+          {majors.map((major) => (
+            <option key={major.id} value={major.id}>
+              {major.name}{major.shortName ? ` (${major.shortName})` : ""}
+            </option>
+          ))}
+        </select>
+        <select
+          value={filterClassId}
+          onChange={(event) => setFilterClassId(event.target.value)}
+          disabled={filterMajorId === "all"}
+          className="field-control w-auto min-w-[180px] disabled:bg-slate-100"
+        >
+          <option value="all">Tất cả lớp học</option>
+          {filterClasses.map((item) => (
+            <option key={item.id} value={item.id}>{item.name}</option>
+          ))}
+        </select>
+        <button
+          onClick={() =>
+            setSelectedIds(
+              allVisibleSelected ? [] : visible.map((item) => item.id),
+            )
+          }
+          className={`min-w-[180px] rounded-xl px-4 py-2.5 text-sm font-semibold transition ${allVisibleSelected ? "border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100" : "border border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"}`}
+        >
+          {allVisibleSelected ? "Bỏ chọn tất cả" : "Chọn tất cả"}
         </button>
         {status === "pending" && (
           <button
             onClick={approveBulk}
             className="rounded-xl bg-emerald-600 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
           >
-            {session?.role === "battalion" ? "Gửi Nhà trường" : "Phê duyệt cuối"} ({visibleSelected.length})
+            {session?.role === "battalion"
+              ? "Gửi Nhà trường"
+              : "Phê duyệt cuối"}{" "}
+            ({visibleSelected.length})
           </button>
         )}
         {status === "approved" && (
           <button
-            onClick={exportBulk}
+            onClick={() => {
+              if (!visibleSelected.length)
+                return alert("Hãy chọn ít nhất một hồ sơ đã duyệt để xuất.");
+              setSignedDate(new Date().toLocaleDateString("vi-VN"));
+              setShowExportChoice(true);
+            }}
             className="rounded-xl bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
           >
-            Xuất quyết định ({visibleSelected.length})
+            Xuất Word ({visibleSelected.length})
           </button>
         )}
       </div>
@@ -303,24 +624,35 @@ export default function RankApprovalPage() {
                 <input
                   type="checkbox"
                   checked={
-                    visible.length > 0 &&
-                    visible.every((item) => selectedIds.includes(item.id))
+                    allVisibleSelected
                   }
                   onChange={() =>
                     setSelectedIds(
-                      visible.every((item) => selectedIds.includes(item.id))
+                      allVisibleSelected
                         ? []
                         : visible.map((item) => item.id),
                     )
                   }
                 />
               </th>
-              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Học viên</th>
-              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Đối tượng</th>
-              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Cấp bậc</th>
-              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Tiến độ</th>
-              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Ngày gửi</th>
-              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Thao tác</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                Học viên
+              </th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                Đối tượng
+              </th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                Cấp bậc
+              </th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                Tiến độ
+              </th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                Ngày gửi
+              </th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+                Thao tác
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -341,7 +673,9 @@ export default function RankApprovalPage() {
                 <td className="p-3 text-sm text-slate-700">
                   {item.currentRank} → {item.proposedRank}
                 </td>
-                <td className="p-3 text-sm text-slate-700">{stageLabel(item)}</td>
+                <td className="p-3 text-sm text-slate-700">
+                  {stageLabel(item)}
+                </td>
                 <td className="p-3 text-sm text-slate-700">
                   {new Date(item.submittedAt).toLocaleDateString("vi-VN")}
                 </td>
@@ -365,7 +699,102 @@ export default function RankApprovalPage() {
           </tbody>
         </table>
       </div>
-      <DataPagination {...pagination} totalItems={visible.length} label="hồ sơ / trang" />
+      <DataPagination
+        {...pagination}
+        totalItems={visible.length}
+        label="hồ sơ / trang"
+      />
+      {showExportChoice && (
+        <Modal onClose={() => !exporting && setShowExportChoice(false)}>
+          <div className="space-y-5 p-6">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.16em] text-indigo-600">
+                Xuất quyết định
+              </p>
+              <h2 className="mt-1 text-xl font-bold text-slate-900">
+                Chọn hình thức xuất Word
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">
+                Xuất {visibleSelected.length} hồ sơ đã được phê duyệt cuối cùng.
+                Dữ liệu gồm học viên, lớp, chuyên ngành và cấp bậc trước/sau khi
+                thăng.
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="text-sm font-semibold text-slate-700">
+                Số văn bản
+                <input
+                  value={documentNumber}
+                  onChange={(event) => setDocumentNumber(event.target.value)}
+                  placeholder="Ví dụ: 23/QĐ-CĐHC2"
+                  className="field-control mt-1 w-full"
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Ngày ký
+                <input
+                  value={signedDate}
+                  onChange={(event) => setSignedDate(event.target.value)}
+                  placeholder="Ví dụ: 05/10/2026"
+                  className="field-control mt-1 w-full"
+                />
+              </label>
+              <label className="text-sm font-semibold text-slate-700">
+                Người ký
+                <input
+                  value={signerName}
+                  onChange={(event) => setSignerName(event.target.value)}
+                  placeholder="Ví dụ: Đại tá Nguyễn Văn A"
+                  className="field-control mt-1 w-full"
+                />
+              </label>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <button
+                disabled={exporting}
+                onClick={() => exportBulk("collective")}
+                className="rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 text-left transition hover:border-indigo-500 hover:bg-indigo-100 disabled:opacity-60"
+              >
+                <span className="block text-base font-bold text-indigo-950">
+                  Quyết định tập thể
+                </span>
+                <span className="mt-2 block text-sm text-slate-600">
+                  Một file Word, nêu tổng số học viên và bảng danh sách từng
+                  người; tổng hợp các nhóm cấp bậc như Binh nhất → Hạ sĩ.
+                </span>
+              </button>
+              <button
+                disabled={exporting}
+                onClick={() => exportBulk("individual")}
+                className="rounded-2xl border-2 border-slate-200 bg-white p-5 text-left transition hover:border-indigo-500 hover:bg-indigo-50 disabled:opacity-60"
+              >
+                <span className="block text-base font-bold text-slate-900">
+                  Quyết định cá nhân
+                </span>
+                <span className="mt-2 block text-sm text-slate-600">
+                  Một file Word cho mỗi học viên, đóng gói thành một file ZIP để
+                  tải về thuận tiện.
+                </span>
+              </button>
+            </div>
+            {exporting && (
+              <p className="text-sm font-semibold text-indigo-700">
+                Đang tạo file Word...
+              </p>
+            )}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                disabled={exporting}
+                onClick={() => setShowExportChoice(false)}
+                className="rounded-lg border px-4 py-2 text-sm font-semibold disabled:opacity-50"
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
       {selected && (
         <Modal onClose={() => setSelected(null)}>
           <RankApprovalDetail
@@ -375,7 +804,9 @@ export default function RankApprovalPage() {
             onResubmit={resubmit}
             canReview={canReviewStage(selected)}
             canForward={canForwardStage(selected)}
-            canResubmit={session?.role === "company" && selected.submittedBy === session.id}
+            canResubmit={
+              session?.role === "company" && selected.submittedBy === session.id
+            }
           />
         </Modal>
       )}
@@ -384,12 +815,147 @@ export default function RankApprovalPage() {
           <form onSubmit={createRequest} className="space-y-4 p-5">
             <h2 className="text-xl font-bold">Lập hồ sơ nâng cấp</h2>
             <div className="grid gap-3 md:grid-cols-3">
-              <select value={companyId} disabled={session?.role === "company"} onChange={(e) => { setCompanyId(e.target.value); setMajorId(""); setClassId(""); setCandidateIds([]); }} className="field-control disabled:bg-slate-100"><option value="">-- Chọn Đại đội --</option>{companies.filter((company) => session?.role !== "company" || company.id === session.unitId).map((company) => <option key={company.id} value={company.id}>{company.nameDaiDoi || company.id}</option>)}</select>
-              <select value={majorId} disabled={!companyId} onChange={(e) => { setMajorId(e.target.value); setClassId(""); setCandidateIds([]); }} className="field-control"><option value="">-- Chọn chuyên ngành --</option>{availableMajors.map((major) => <option key={major.id} value={major.id}>{major.name}{major.shortName ? ` (${major.shortName})` : ""}</option>)}</select>
-              <select value={classId} disabled={!majorId} onChange={(e) => { setClassId(e.target.value); setCandidateIds([]); }} className="field-control"><option value="">Tất cả lớp học</option>{availableClasses.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>
+              <select
+                value={companyId}
+                disabled={session?.role === "company"}
+                onChange={(e) => {
+                  setCompanyId(e.target.value);
+                  setMajorId("");
+                  setClassId("");
+                  setCandidateIds([]);
+                }}
+                className="field-control disabled:bg-slate-100"
+              >
+                <option value="">-- Chọn Đại đội --</option>
+                {companies
+                  .filter(
+                    (company) =>
+                      session?.role !== "company" ||
+                      company.id === session.unitId,
+                  )
+                  .map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.nameDaiDoi || company.id}
+                    </option>
+                  ))}
+              </select>
+              <select
+                value={majorId}
+                disabled={!companyId}
+                onChange={(e) => {
+                  setMajorId(e.target.value);
+                  setClassId("");
+                  setCandidateIds([]);
+                }}
+                className="field-control"
+              >
+                <option value="">-- Chọn chuyên ngành --</option>
+                {availableMajors.map((major) => (
+                  <option key={major.id} value={major.id}>
+                    {major.name}
+                    {major.shortName ? ` (${major.shortName})` : ""}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={classId}
+                disabled={!majorId}
+                onChange={(e) => {
+                  setClassId(e.target.value);
+                  setCandidateIds([]);
+                }}
+                className="field-control"
+              >
+                <option value="">Tất cả lớp học</option>
+                {availableClasses.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <input value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} placeholder="Tìm tên hoặc mã học viên..." className="field-control" />
-            <div className="overflow-hidden rounded-xl border"><div className="flex items-center justify-between bg-slate-50 p-3"><span className="text-sm font-semibold">Học viên ({selectedCandidates.length}/{filteredStudents.length} đã chọn)</span><button type="button" onClick={() => setCandidateIds(filteredStudents.length && filteredStudents.every((student) => candidateIds.includes(student.id)) ? [] : filteredStudents.map((student) => student.id))} className="text-sm font-semibold text-blue-700">{filteredStudents.length && filteredStudents.every((student) => candidateIds.includes(student.id)) ? "Bỏ chọn tất cả" : "Chọn tất cả"}</button></div>{majorId ? <div className="max-h-56 overflow-y-auto">{filteredStudents.map((student) => { const current = ranks.find((rank) => rank.name === student.capBac); const next = current && ranks.filter((rank) => rank.rankOrder > current.rankOrder).sort((a, b) => a.rankOrder - b.rankOrder)[0]; return <label key={student.id} className="flex items-center gap-3 border-t p-3"><input type="checkbox" checked={candidateIds.includes(student.id)} disabled={!next} onChange={() => setCandidateIds((items) => items.includes(student.id) ? items.filter((id) => id !== student.id) : [...items, student.id])} /><span className="flex-1"><b>{student.name}</b><span className="ml-2 text-xs text-slate-500">{student.maSoHV}</span></span><span className="text-sm text-slate-600">{student.capBac} → {next?.name || "Không có bậc kế tiếp"}</span></label>; })}</div> : <p className="p-4 text-sm text-slate-500">Chọn Đại đội và Chuyên ngành để xem học viên.</p>}</div>
+            <input
+              value={studentSearch}
+              onChange={(e) => setStudentSearch(e.target.value)}
+              placeholder="Tìm tên hoặc mã học viên..."
+              className="field-control"
+            />
+            <div className="overflow-hidden rounded-xl border">
+              <div className="flex items-center justify-between bg-slate-50 p-3">
+                <span className="text-sm font-semibold">
+                  Học viên ({selectedCandidates.length}/
+                  {filteredStudents.length} đã chọn)
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCandidateIds(
+                      filteredStudents.length &&
+                        filteredStudents.every((student) =>
+                          candidateIds.includes(student.id),
+                        )
+                        ? []
+                        : filteredStudents.map((student) => student.id),
+                    )
+                  }
+                  className="text-sm font-semibold text-blue-700"
+                >
+                  {filteredStudents.length &&
+                  filteredStudents.every((student) =>
+                    candidateIds.includes(student.id),
+                  )
+                    ? "Bỏ chọn tất cả"
+                    : "Chọn tất cả"}
+                </button>
+              </div>
+              {majorId ? (
+                <div className="max-h-56 overflow-y-auto">
+                  {filteredStudents.map((student) => {
+                    const current = ranks.find(
+                      (rank) => rank.name === student.capBac,
+                    );
+                    const next =
+                      current &&
+                      ranks
+                        .filter((rank) => rank.rankOrder > current.rankOrder)
+                        .sort((a, b) => a.rankOrder - b.rankOrder)[0];
+                    return (
+                      <label
+                        key={student.id}
+                        className="flex items-center gap-3 border-t p-3"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={candidateIds.includes(student.id)}
+                          disabled={!next}
+                          onChange={() =>
+                            setCandidateIds((items) =>
+                              items.includes(student.id)
+                                ? items.filter((id) => id !== student.id)
+                                : [...items, student.id],
+                            )
+                          }
+                        />
+                        <span className="flex-1">
+                          <b>{student.name}</b>
+                          <span className="ml-2 text-xs text-slate-500">
+                            {student.maSoHV}
+                          </span>
+                        </span>
+                        <span className="text-sm text-slate-600">
+                          {student.capBac} →{" "}
+                          {next?.name || "Không có bậc kế tiếp"}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="p-4 text-sm text-slate-500">
+                  Chọn Đại đội và Chuyên ngành để xem học viên.
+                </p>
+              )}
+            </div>
             <select
               value={requestCategory}
               onChange={(e) =>

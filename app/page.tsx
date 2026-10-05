@@ -9,6 +9,7 @@ import StudentTable from "@/components/StudentTable";
 import StudentPagination from "@/components/StudentPagination";
 import StudentModals from "@/components/StudentModals";
 import StudentDetail from "@/components/StudentDetail";
+import StudentFormsExportModal from "@/components/StudentFormsExportModal";
 import { ModalShell } from "@/components/ui/modal-shell";
 import { getSession } from "@/components/AuthGate";
 
@@ -33,6 +34,7 @@ export default function Home() {
   const [detailStudent, setDetailStudent] = useState<Student | null>(null);
 
   const [isEditManyOpen, setIsEditManyOpen] = useState(false);
+  const [isFormsExportOpen, setIsFormsExportOpen] = useState(false);
 
   // =====================================================
   // STATE DATA
@@ -278,21 +280,21 @@ export default function Home() {
   // =====================================================
 
   const handleSelectAll = () => {
-    const currentPageIds = currentStudents.map((student) => student.id);
+    const filteredIds = filteredStudents.map((student) => student.id);
 
     const isAllSelected =
-      currentPageIds.length > 0 &&
-      currentPageIds.every((id) => selectedIds.includes(id));
+      filteredIds.length > 0 &&
+      filteredIds.every((id) => selectedIds.includes(id));
 
     if (isAllSelected) {
       setSelectedIds((prev) =>
-        prev.filter((id) => !currentPageIds.includes(id)),
+        prev.filter((id) => !filteredIds.includes(id)),
       );
 
       return;
     }
 
-    setSelectedIds((prev) => [...new Set([...prev, ...currentPageIds])]);
+    setSelectedIds((prev) => [...new Set([...prev, ...filteredIds])]);
   };
 
   // =====================================================
@@ -432,6 +434,7 @@ export default function Home() {
         selectedCount={selectedIds.length}
         onAdd={() => setIsOpen(true)}
         onEditMany={() => setIsEditManyOpen(true)}
+        onExportForms={() => setIsFormsExportOpen(true)}
       />
 
       {/* =================================================
@@ -461,6 +464,11 @@ export default function Home() {
         editStudent={editStudent}
         isEditManyOpen={isEditManyOpen}
         selectedIds={selectedIds}
+        allFilteredSelected={
+          filteredStudents.length > 0 &&
+          filteredStudents.every((student) => selectedIds.includes(student.id))
+        }
+        filteredCount={filteredStudents.length}
         students={students}
         onCloseAdd={() => setIsOpen(false)}
         onCloseEdit={() => setEditStudent(null)}
@@ -513,6 +521,16 @@ export default function Home() {
               onClose={() => setDetailStudent(null)}
             />
         </ModalShell>
+      )}
+      {isFormsExportOpen && (
+        <StudentFormsExportModal
+          students={students.filter((student) => selectedIds.includes(student.id))}
+          classes={classes}
+          majors={nganhDaoTao}
+          companies={companies}
+          regions={quanKhu}
+          onClose={() => setIsFormsExportOpen(false)}
+        />
       )}
     </div>
   );

@@ -146,4 +146,10 @@
   .table-shell td { @apply border-t border-slate-100 px-4 py-3 text-sm text-slate-700; }
   .field-label { @apply mb-1.5 block text-sm font-medium text-slate-700; }
   .field-control { @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10; }
+
+  /* Đồng bộ trang phê duyệt bổ nhiệm với hệ giao diện phê duyệt cấp bậc. */
+  .page-shell > header[class*="from-violet-700"] { @apply rounded-none border-0 bg-transparent p-0 text-slate-900 shadow-none; }
+  .page-shell > header[class*="from-violet-700"] [class*="text-violet-100"] { @apply text-blue-600; }
+  .page-shell > header[class*="from-violet-700"] [class*="text-violet-50"] { @apply text-slate-500; }
+  .page-shell button[class*="bg-violet-700"] { @apply bg-blue-600 hover:bg-blue-700; }
 }

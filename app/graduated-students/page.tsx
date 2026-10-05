@@ -72,22 +72,24 @@ export default function GraduatedStudentsPage() {
   };
   const pagination = usePagination(visible);
   return (
-    <div className="p-4">
+    <div className="page-shell">
       <div className="mb-5">
-        <h1 className="text-2xl font-bold">Học viên tốt nghiệp</h1>
-        <p className="mt-1 text-gray-500">Tổng: {visible.length} người.</p>
+        <p className="mb-1 text-xs font-bold uppercase tracking-[.18em] text-blue-600">Hồ sơ đào tạo</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Học viên tốt nghiệp</h1>
+        <p className="mt-1 text-sm text-slate-500">Danh sách học viên đã được Nhà trường phê duyệt tốt nghiệp hoặc điều chuyển.</p>
       </div>
-      <div className="mb-4 flex flex-wrap gap-3 rounded-xl border bg-white p-4 shadow-sm">
+      <div className="mb-4 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">Hiển thị {visible.length} học viên tốt nghiệp thuộc phạm vi dữ liệu bạn được phép xem.</div>
+      <div className="mb-4 flex flex-wrap gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Tìm tên hoặc mã số..."
-          className="min-w-60 flex-1 rounded-lg border px-3 py-2.5"
+          className="field-control min-w-60 flex-1"
         />
         <select
           value={classId}
           onChange={(e) => setClassId(e.target.value)}
-          className="rounded-lg border px-3 py-2.5"
+          className="field-control w-auto min-w-[180px]"
         >
           <option value="all">Tất cả lớp</option>
           {classes.map((c) => (
@@ -97,22 +99,22 @@ export default function GraduatedStudentsPage() {
           ))}
         </select>
       </div>
-      <div className="max-h-[calc(100vh-230px)] overflow-auto rounded-xl border bg-white shadow-sm">
+      <div className="table-shell max-h-[calc(100vh-300px)]">
         <table className="min-w-[1200px] w-full">
-          <thead className="sticky top-0 z-10 bg-gray-100">
+          <thead>
             <tr>
-              <th className="p-3 text-left">Mã số</th>
-              <th className="p-3 text-left">Họ tên</th>
-              <th className="p-3 text-left">Ngành</th>
-              <th className="p-3 text-left">Lớp</th>
-              <th className="p-3 text-left">Quân khu gốc</th>
-              <th className="p-3 text-left">Đơn vị gốc</th>
-              <th className="p-3 text-left">Tốt nghiệp</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Mã số</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Họ tên</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Ngành</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Lớp</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Quân khu gốc</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Đơn vị gốc</th>
+              <th className="p-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">Tốt nghiệp</th>
             </tr>
           </thead>
           <tbody>
             {pagination.currentItems.map((s) => (
-              <tr key={s.id} className="border-t hover:bg-gray-50">
+              <tr key={s.id} className="transition hover:bg-slate-50">
                 <td className="p-3">{s.maSoHV}</td>
                 <td className="p-3 font-medium">{s.name}</td>
                 <td className="p-3">
@@ -139,7 +141,7 @@ export default function GraduatedStudentsPage() {
             ))}
             {!visible.length && (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-gray-500">
+                <td colSpan={7} className="p-8 text-center text-slate-500">
                   Chưa có học viên tốt nghiệp
                 </td>
               </tr>
@@ -147,7 +149,7 @@ export default function GraduatedStudentsPage() {
           </tbody>
         </table>
       </div>
-      <div className="rounded-b-xl border border-t-0 bg-white shadow-sm"><DataPagination {...pagination} totalItems={visible.length} label="học viên / trang" /></div>
+      <DataPagination {...pagination} totalItems={visible.length} label="học viên / trang" />
     </div>
   );
 }

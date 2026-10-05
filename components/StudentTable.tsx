@@ -17,6 +17,8 @@ type StudentTableProps = {
   subUnits: { id: string; name: string; type: string; source: string }[];
 
   selectedIds: string[];
+  allFilteredSelected: boolean;
+  filteredCount: number;
 
   startIndex: number;
 
@@ -35,6 +37,8 @@ export default function StudentTable({
   quanKhu,
   subUnits,
   selectedIds,
+  allFilteredSelected,
+  filteredCount,
   startIndex,
   onSelect,
   onSelectAll,
@@ -42,13 +46,9 @@ export default function StudentTable({
   onDetail,
   onDelete,
 }: StudentTableProps) {
-  const isAllSelected =
-    students.length > 0 &&
-    students.every((student) => selectedIds.includes(student.id));
-
   return (
     <div className="mt-5 min-w-0 max-w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 className="font-bold text-slate-900">Danh sách học viên</h2><p className="mt-0.5 text-sm text-slate-500">Chọn một hoặc nhiều hồ sơ để thao tác.</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">{students.length} kết quả</span></div>
+      <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h2 className="font-bold text-slate-900">Danh sách học viên</h2><p className="mt-0.5 text-sm text-slate-500">Ô chọn ở tiêu đề sẽ chọn toàn bộ {filteredCount} học viên theo bộ lọc, không chỉ trang hiện tại.</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">{students.length}/{filteredCount} kết quả</span></div>
       <div className="max-h-[calc(100vh-330px)] overflow-auto"><table className="w-full min-w-[1080px] border-collapse">
         {/* HEADER */}
 
@@ -57,9 +57,10 @@ export default function StudentTable({
             <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
               <input
                 type="checkbox"
-                checked={isAllSelected}
+                checked={allFilteredSelected}
                 onChange={onSelectAll}
                 className="h-5 w-5"
+                title={`Chọn tất cả ${filteredCount} học viên theo bộ lọc`}
               />
             </th>
 
